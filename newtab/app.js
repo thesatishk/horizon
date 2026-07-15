@@ -172,109 +172,90 @@ function handleFocusSubmit() {
 // Local Folder Photos
 // ============================================================
 
-const LOCAL_DB_NAME = 'horizon-local-images';
-const LOCAL_STORE = 'file-handles';
+const LOCAL_DB = 'horizon-images';
+const LOCAL_STORE = 'images';
 
-function openLocalDB() {
+function openImagesDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(LOCAL_DB_NAME, 1);
-    req.onupgradeneeded = () => { req.result.createObjectStore(LOCAL_STORE); };
+    const req = indexedDB.open(LOCAL_DB, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(LOCAL_STORE)) {
+        db.createObjectStore(LOCAL_STORE, { keyPath: 'name' });
+      }
+    };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
 
-async function storeDirectoryHandle(handle) {
-  const db = await openLocalDB();
+async function storeImagesInDB(files, folderName) {
+  const db = await openImagesDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(LOCAL_STORE, 'readwrite');
-    tx.objectStore(LOCAL_STORE).put(handle, 'folder');
+    const store = tx.objectStore(LOCAL_STORE);
+    
+    // Clear old images
+    store.clear();
+    
+    // Store new ones
+    for (const file of files) {
+      store.put({ name: file.name, data: file, folder: folderName });
+    }
+    
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
 }
 
-async function getDirectoryHandle() {
-  try {
-    const db = await openLocalDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(LOCAL_STORE, 'readonly');
-      const req = tx.objectStore(LOCAL_STORE).get('folder');
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  } catch {
-    return null;
-  }
-}
-
 async function chooseLocalFolder() {
   try {
-    // File System Access API (Chrome 86+)
-    const handle = await window.showDirectoryPicker({ mode: 'read' });
-    state.localFolderName = handle.name;
-    await storeDirectoryHandle(handle);
+    const files = await new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.webkitdirectory = true;
+      input.accept = 'image/*';
+      input.onchange = () => {
+        const imageFiles = Array.from(input.files || []).filter(f =>
+          /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(f.name)
+        );
+        resolve(imageFiles);
+      };
+      setTimeout(() => resolve([]), 120000);
+      input.click();
+    });
+
+    if (files.length === 0) return false;
+
+    const folderName = (files[0].webkitRelativePath || '').split('/')[0] || 'Wallpapers';
+    await storeImagesInDB(files, folderName);
+    
+    state.localFolderName = `${folderName} (${files.length})`;
     saveState();
     return true;
-  } catch (err) {
-    if (err.name === 'AbortError') return false;
-    // Fallback for Firefox: multi-file picker
-    try {
-      const files = await new Promise((resolve) => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.multiple = true;
-        input.accept = 'image/*';
-        input.onchange = () => resolve(Array.from(input.files));
-        input.oncancel = () => resolve([]);
-        input.click();
-      });
-      if (files.length > 0) {
-        const blobUrls = files.map(f => URL.createObjectURL(f));
-        await chrome.storage.local.set({ 'horizon:local-blobs': blobUrls });
-        state.localFolderName = `${files.length} images`;
-        saveState();
-        return true;
-      }
-    } catch {}
+  } catch {
     return false;
   }
 }
 
 async function getLocalImageUrl() {
-  // Try File System Access API first
-  const handle = await getDirectoryHandle();
-  if (handle) {
-    try {
-      // Re-request permission (needed after browser restart)
-      const perm = await handle.queryPermission({ mode: 'read' });
-      if (perm !== 'granted') {
-        await handle.requestPermission({ mode: 'read' });
-      }
-      const images = [];
-      for await (const [name, fileHandle] of handle.entries()) {
-        if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(name)) {
-          images.push(fileHandle);
-        }
-      }
-      if (images.length > 0) {
-        const randomHandle = images[Math.floor(Math.random() * images.length)];
-        const file = await randomHandle.getFile();
-        return URL.createObjectURL(file);
-      }
-    } catch {}
-  }
-
-  // Fallback: stored blob URLs from file picker
   try {
-    const data = await chrome.storage.local.get('horizon:local-blobs');
-    const blobs = data['horizon:local-blobs'];
-    if (blobs && blobs.length > 0) {
-      return blobs[Math.floor(Math.random() * blobs.length)];
-    }
-  } catch {}
-
-  return null;
+    const db = await openImagesDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(LOCAL_STORE, 'readonly');
+      const store = tx.objectStore(LOCAL_STORE);
+      const req = store.getAll();
+      req.onsuccess = () => {
+        const images = req.result;
+        if (images.length === 0) return resolve(null);
+        const random = images[Math.floor(Math.random() * images.length)];
+        resolve(URL.createObjectURL(random.data));
+      };
+      req.onerror = () => resolve(null);
+    });
+  } catch {
+    return null;
+  }
 }
 
 // ============================================================
