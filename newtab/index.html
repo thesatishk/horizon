@@ -93,6 +93,21 @@
         </select>
       </label>
       <label>
+        <span>Photo source</span>
+        <select id="setting-photo-source">
+          <option value="lorem">Curated web (LoremFlickr)</option>
+          <option value="unsplash">Unsplash (needs API key)</option>
+          <option value="local">Local folder</option>
+        </select>
+      </label>
+      <label id="local-folder-label" style="display:none">
+        <span>Folder</span>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="setting-local-folder" readonly placeholder="No folder selected" style="flex:1">
+          <button type="button" id="btn-choose-folder" style="padding:8px 14px;background:var(--accent);border:1px solid var(--accent-hover);border-radius:var(--radius-sm);color:var(--text-primary);cursor:pointer;font-size:13px;white-space:nowrap">Choose…</button>
+        </div>
+      </label>
+      <label>
         <span>Photo category</span>
         <select id="setting-photo-category">
           <option value="nature">Nature</option>

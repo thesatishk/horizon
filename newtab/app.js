@@ -14,8 +14,10 @@ let state = {
   clockFormat: '12',
   showSeconds: false,
   tempUnit: 'imperial',
+  photoSource: 'lorem',  // 'lorem' | 'unsplash' | 'local'
   photoCategory: 'nature',
   unsplashKey: '',
+  localFolderName: '',
   hermesEnabled: false,
   hermesUrl: 'http://localhost:8942',
   focus: '',
@@ -167,6 +169,115 @@ function handleFocusSubmit() {
 }
 
 // ============================================================
+// Local Folder Photos
+// ============================================================
+
+const LOCAL_DB_NAME = 'horizon-local-images';
+const LOCAL_STORE = 'file-handles';
+
+function openLocalDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(LOCAL_DB_NAME, 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore(LOCAL_STORE); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function storeDirectoryHandle(handle) {
+  const db = await openLocalDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LOCAL_STORE, 'readwrite');
+    tx.objectStore(LOCAL_STORE).put(handle, 'folder');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function getDirectoryHandle() {
+  try {
+    const db = await openLocalDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(LOCAL_STORE, 'readonly');
+      const req = tx.objectStore(LOCAL_STORE).get('folder');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function chooseLocalFolder() {
+  try {
+    // File System Access API (Chrome 86+)
+    const handle = await window.showDirectoryPicker({ mode: 'read' });
+    state.localFolderName = handle.name;
+    await storeDirectoryHandle(handle);
+    saveState();
+    return true;
+  } catch (err) {
+    if (err.name === 'AbortError') return false;
+    // Fallback for Firefox: multi-file picker
+    try {
+      const files = await new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.accept = 'image/*';
+        input.onchange = () => resolve(Array.from(input.files));
+        input.oncancel = () => resolve([]);
+        input.click();
+      });
+      if (files.length > 0) {
+        const blobUrls = files.map(f => URL.createObjectURL(f));
+        await chrome.storage.local.set({ 'horizon:local-blobs': blobUrls });
+        state.localFolderName = `${files.length} images`;
+        saveState();
+        return true;
+      }
+    } catch {}
+    return false;
+  }
+}
+
+async function getLocalImageUrl() {
+  // Try File System Access API first
+  const handle = await getDirectoryHandle();
+  if (handle) {
+    try {
+      // Re-request permission (needed after browser restart)
+      const perm = await handle.queryPermission({ mode: 'read' });
+      if (perm !== 'granted') {
+        await handle.requestPermission({ mode: 'read' });
+      }
+      const images = [];
+      for await (const [name, fileHandle] of handle.entries()) {
+        if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(name)) {
+          images.push(fileHandle);
+        }
+      }
+      if (images.length > 0) {
+        const randomHandle = images[Math.floor(Math.random() * images.length)];
+        const file = await randomHandle.getFile();
+        return URL.createObjectURL(file);
+      }
+    } catch {}
+  }
+
+  // Fallback: stored blob URLs from file picker
+  try {
+    const data = await chrome.storage.local.get('horizon:local-blobs');
+    const blobs = data['horizon:local-blobs'];
+    if (blobs && blobs.length > 0) {
+      return blobs[Math.floor(Math.random() * blobs.length)];
+    }
+  } catch {}
+
+  return null;
+}
+
+// ============================================================
 // Background
 // ============================================================
 
@@ -241,6 +352,17 @@ async function fetchBackground() {
     resolved = true;
     dom.background.style.backgroundImage = `url(${url})`;
   };
+
+  // Local folder takes priority
+  if (state.photoSource === 'local') {
+    const localUrl = await getLocalImageUrl();
+    if (localUrl) {
+      resolve(localUrl);
+      return;
+    }
+    applyFallbackBackground();
+    return;
+  }
 
   // Try Unsplash API first (if key is configured)
   if (state.unsplashKey) {
@@ -510,6 +632,9 @@ function updateSettingsForm() {
   $('#setting-clock-format').value = state.clockFormat;
   $('#setting-show-seconds').checked = state.showSeconds;
   $('#setting-unit').value = state.tempUnit;
+  $('#setting-photo-source').value = state.photoSource;
+  $('#setting-local-folder').value = state.localFolderName || '';
+  $('#local-folder-label').style.display = state.photoSource === 'local' ? 'flex' : 'none';
   $('#setting-photo-category').value = state.photoCategory;
   $('#setting-unsplash-key').value = state.unsplashKey || '';
   $('#setting-hermes').checked = state.hermesEnabled;
@@ -522,6 +647,19 @@ function bindSettings() {
   $('#setting-clock-format').onchange = (e) => { state.clockFormat = e.target.value; saveState(); updateClock(); };
   $('#setting-show-seconds').onchange = (e) => { state.showSeconds = e.target.checked; saveState(); };
   $('#setting-unit').onchange = (e) => { state.tempUnit = e.target.value; saveState(); fetchWeather(); };
+  $('#setting-photo-source').onchange = (e) => {
+    state.photoSource = e.target.value;
+    $('#local-folder-label').style.display = e.target.value === 'local' ? 'flex' : 'none';
+    saveState();
+    fetchBackground();
+  };
+  $('#btn-choose-folder').onclick = async () => {
+    const ok = await chooseLocalFolder();
+    if (ok) {
+      $('#setting-local-folder').value = state.localFolderName;
+      fetchBackground();
+    }
+  };
   $('#setting-photo-category').onchange = (e) => { state.photoCategory = e.target.value; saveState(); fetchBackground(); };
   $('#setting-unsplash-key').oninput = (e) => { state.unsplashKey = e.target.value.trim(); saveState(); };
   $('#setting-hermes').onchange = (e) => {
