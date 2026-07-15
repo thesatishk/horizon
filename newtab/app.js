@@ -634,7 +634,6 @@ function updateSettingsForm() {
   $('#setting-unit').value = state.tempUnit;
   $('#setting-photo-source').value = state.photoSource;
   $('#setting-local-folder').value = state.localFolderName || '';
-  $('#local-folder-label').style.display = state.photoSource === 'local' ? 'flex' : 'none';
   $('#setting-photo-category').value = state.photoCategory;
   $('#setting-unsplash-key').value = state.unsplashKey || '';
   $('#setting-hermes').checked = state.hermesEnabled;
@@ -649,7 +648,6 @@ function bindSettings() {
   $('#setting-unit').onchange = (e) => { state.tempUnit = e.target.value; saveState(); fetchWeather(); };
   $('#setting-photo-source').onchange = (e) => {
     state.photoSource = e.target.value;
-    $('#local-folder-label').style.display = e.target.value === 'local' ? 'flex' : 'none';
     saveState();
     fetchBackground();
   };
