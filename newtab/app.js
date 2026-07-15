@@ -871,8 +871,13 @@ function showBriefing(briefing) {
   document.getElementById('briefing-focus').textContent = briefing.focus_suggestion || '';
   document.getElementById('briefing-calendar').textContent = briefing.weather_note || '';
   document.getElementById('briefing-note').textContent = briefing.quick_note || '';
-  document.getElementById('briefing-dismiss').onclick = () => widget.classList.add('hidden');
+  document.getElementById('briefing-dismiss').onclick = () => {
+    widget.classList.add('hidden');
+    dom.quoteText.style.display = '';
+  };
   
+  // Hide quote while briefing is showing
+  dom.quoteText.style.display = 'none';
   widget.classList.remove('hidden');
 }
 
