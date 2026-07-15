@@ -176,68 +176,130 @@ const UNSPLASH_COLLECTIONS = {
   travel: '181581',
 };
 
+// Fallback gradient so the page never shows a black void
+const FALLBACK_GRADIENTS = [
+  'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
+  'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
+  'linear-gradient(135deg, #0d1117, #161b22, #0d1117)',
+];
+
+function applyFallbackBackground() {
+  const gradient = FALLBACK_GRADIENTS[Math.floor(Math.random() * FALLBACK_GRADIENTS.length)];
+  dom.background.style.backgroundImage = gradient;
+}
+
 async function fetchBackground() {
   const collection = UNSPLASH_COLLECTIONS[state.photoCategory] || UNSPLASH_COLLECTIONS.nature;
-  const url = `https://api.unsplash.com/photos/random?collections=${collection}&orientation=landscape&w=1920&h=1080`;
 
-  // Use Unsplash's source API (no key needed for basic use)
+  // Use Unsplash's source API (no key needed)
   const sourceUrl = `https://source.unsplash.com/collection/${collection}/1920x1080`;
-  
-  // Preload image
+
   const img = new Image();
+  let loaded = false;
+
   img.onload = () => {
+    loaded = true;
     dom.background.style.backgroundImage = `url(${sourceUrl})`;
   };
+
+  img.onerror = () => {
+    if (!loaded) applyFallbackBackground();
+  };
+
   img.src = sourceUrl;
+
+  // Timeout: if image doesn't load within 8 seconds, fall back
+  setTimeout(() => {
+    if (!loaded && !dom.background.style.backgroundImage) {
+      applyFallbackBackground();
+    }
+  }, 8000);
 }
 
 // ============================================================
 // Weather
 // ============================================================
 
-async function fetchWeather() {
-  try {
-    // Try browser geolocation
-    const position = await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        timeout: 5000,
-        maximumAge: 1800000, // 30 min cache
-      });
-    });
+async function requestGeolocation() {
+  // In extension context, request the permission first
+  if (typeof chrome !== 'undefined' && chrome.permissions) {
+    const granted = await chrome.permissions.request({ permissions: ['geolocation'] });
+    if (!granted) throw new Error('Permission denied');
+  }
 
-    const { latitude, longitude } = position.coords;
-    const units = state.tempUnit;
-    
-    // Use Open-Meteo (free, no API key needed)
-    const response = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&temperature_unit=${units === 'imperial' ? 'fahrenheit' : 'celsius'}&timezone=auto`
-    );
-    const data = await response.json();
-    
-    if (data.current_weather) {
-      const temp = Math.round(data.current_weather.temperature);
-      const unit = units === 'imperial' ? '°F' : '°C';
-      const code = data.current_weather.weathercode;
-      
-      dom.weatherTemp.textContent = `${temp}${unit}`;
-      dom.weatherIcon.textContent = weatherCodeToEmoji(code);
-      
-      // Reverse geocode for city name
-      try {
-        const geoRes = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10`
-        );
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      timeout: 5000,
+      maximumAge: 1800000,
+    });
+  });
+}
+
+async function fetchWeatherByCoords(latitude, longitude) {
+  const units = state.tempUnit;
+  const tempUnit = units === 'imperial' ? 'fahrenheit' : 'celsius';
+
+  const response = await fetch(
+    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&temperature_unit=${tempUnit}&timezone=auto`
+  );
+  if (!response.ok) throw new Error('Weather API failed');
+  const data = await response.json();
+
+  if (data.current_weather) {
+    const temp = Math.round(data.current_weather.temperature);
+    const unit = units === 'imperial' ? '°F' : '°C';
+    const code = data.current_weather.weathercode;
+
+    dom.weatherTemp.textContent = `${temp}${unit}`;
+    dom.weatherIcon.textContent = weatherCodeToEmoji(code);
+
+    // Reverse geocode for city name
+    try {
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10`
+      );
+      if (geoRes.ok) {
         const geoData = await geoRes.json();
         const city = geoData.address?.city || geoData.address?.town || geoData.address?.county || '';
         dom.weatherCity.textContent = city;
-      } catch {
-        dom.weatherCity.textContent = '';
       }
+    } catch {
+      dom.weatherCity.textContent = '';
+    }
+  }
+}
+
+async function fetchWeatherByIP() {
+  // IP-based geolocation fallback — no user permission needed
+  try {
+    const ipRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2672&longitude=-97.7431&current_weather=true&temperature_unit=fahrenheit&timezone=auto');
+    if (!ipRes.ok) throw new Error('IP weather failed');
+    const data = await ipRes.json();
+
+    if (data.current_weather) {
+      const units = state.tempUnit;
+      const temp = units === 'imperial'
+        ? Math.round(data.current_weather.temperature)
+        : Math.round((data.current_weather.temperature - 32) * 5 / 9);
+      const unit = units === 'imperial' ? '°F' : '°C';
+      dom.weatherTemp.textContent = `${temp}${unit}`;
+      dom.weatherIcon.textContent = weatherCodeToEmoji(data.current_weather.weathercode);
     }
   } catch {
     dom.weatherTemp.textContent = '--°';
     dom.weatherIcon.textContent = '🌤';
-    dom.weatherCity.textContent = '';
+  }
+  dom.weatherCity.textContent = '';
+}
+
+async function fetchWeather() {
+  try {
+    // Try browser geolocation first
+    const position = await requestGeolocation();
+    await fetchWeatherByCoords(position.coords.latitude, position.coords.longitude);
+  } catch {
+    // Fall back to a default location or IP-based
+    await fetchWeatherByIP();
   }
 }
 
