@@ -460,25 +460,9 @@ body {
    Background Controls
    ============================================ */
 
-.bg-controls {
-  position: fixed;
-  top: 24px;
-  right: 24px;
-  z-index: 3;
-  display: flex;
-  gap: 8px;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-body:hover .bg-controls,
-.bg-controls.always-show {
-  opacity: 1;
-}
-
 .bg-btn {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
@@ -488,7 +472,7 @@ body:hover .bg-controls,
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
-  font-size: 16px;
+  font-size: 14px;
   transition: all var(--transition);
 }
 
