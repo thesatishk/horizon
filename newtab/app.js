@@ -859,6 +859,9 @@ async function init() {
 
   document.addEventListener('keydown', handleKeyboard);
 
+  // Bind all settings handlers
+  bindSettings();
+
   // Initial render
   updateClock();
   updateGreeting();
