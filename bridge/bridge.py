@@ -59,6 +59,25 @@ def save_focus(text):
     focus_file.write_text(json.dumps({"focus": text, "timestamp": time.time()}))
 
 
+def parse_hermes_json(text):
+    """Extract JSON from Hermes output, handling markdown code blocks."""
+    import re
+    # Strip markdown code blocks
+    text = re.sub(r'^```(?:json)?\s*\n', '', text.strip())
+    text = re.sub(r'\n```\s*$', '', text.strip())
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # Try to find JSON object in the text
+        match = re.search(r'\{.*\}|\[.*\]', text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except json.JSONDecodeError:
+                pass
+    return None
+
+
 class BridgeHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass  # quiet
@@ -104,10 +123,10 @@ class BridgeHandler(BaseHTTPRequestHandler):
                 timeout=15,
             )
             if response:
-                try:
-                    events = json.loads(response)
-                    self._send_json({"events": events})
-                except json.JSONDecodeError:
+                events = parse_hermes_json(response)
+                if events:
+                    self._send_json({"events": events if isinstance(events, list) else [events]})
+                else:
                     self._send_json({"events": [], "raw": response[:200]})
             else:
                 self._send_json({"events": []})
@@ -125,17 +144,25 @@ class BridgeHandler(BaseHTTPRequestHandler):
                 self._send_json({"results": []}, status=400)
                 return
 
-            response = call_hermes(
-                f"Answer this query concisely as a JSON array of results. Each result has: title, detail, url (optional), action (optional). "
-                f"Use your memory, calendar, email, and file system to find relevant information. "
-                f"Query: {query}",
-                timeout=20,
+            prompt = (
+                "You are the command bar for Horizon, a new tab page. "
+                "Answer this query by returning a JSON array of results. "
+                "Each result object must have: title (short label), detail (one-line description). "
+                "Optional fields: url (to open), action (one of: open_file, open_url, compose_email, view_calendar, search_web, copy_text). "
+                "When the action is open_file, include file_path (absolute path). "
+                "When the action is compose_email, include email_to and email_subject. "
+                "When the action is copy_text, include copy_value. "
+                "Use your memory, calendar, email, file system, and browser history to find relevant information. "
+                "Be specific and actionable — the user wants to DO something, not just read. "
+                "Prioritize actions the user can take with one click. "
+                f"Query: {query}"
             )
+            response = call_hermes(prompt, timeout=30)
             if response:
-                try:
-                    results = json.loads(response)
+                results = parse_hermes_json(response)
+                if results:
                     self._send_json({"results": results if isinstance(results, list) else [results]})
-                except json.JSONDecodeError:
+                else:
                     self._send_json({
                         "results": [{"title": "Hermes", "detail": response[:300]}]
                     })

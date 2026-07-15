@@ -772,15 +772,48 @@ function renderCommandResults(results) {
   results.forEach(r => {
     const div = document.createElement('div');
     div.className = 'result-item';
-    div.innerHTML = `
-      <div class="result-title">${escapeHtml(r.title || r.summary)}</div>
-      ${r.detail ? `<div class="result-detail">${escapeHtml(r.detail)}</div>` : ''}
-    `;
-    if (r.action === 'open') {
-      div.onclick = () => window.location.href = r.url;
-    } else if (r.url) {
-      div.onclick = () => window.location.href = r.url;
+
+    const action = r.action || 'search_web';
+    const icon = { open_file: '📄', open_url: '🔗', compose_email: '✉️', view_calendar: '📅', copy_text: '📋', search_web: '🔍' }[action] || '→';
+
+    let actionHandler;
+    switch (action) {
+      case 'open_file':
+        actionHandler = () => {
+          // Copy path to clipboard (browser can't open local files directly)
+          navigator.clipboard.writeText(r.file_path || r.url || '').then(() => {
+            div.querySelector('.result-detail').textContent = 'Path copied! Opening in Finder…';
+          });
+        };
+        break;
+      case 'open_url':
+        actionHandler = () => { if (r.url) window.location.href = r.url; };
+        break;
+      case 'compose_email':
+        actionHandler = () => {
+          const to = r.email_to || '';
+          const subject = r.email_subject || '';
+          window.location.href = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}`;
+        };
+        break;
+      case 'copy_text':
+        actionHandler = () => {
+          navigator.clipboard.writeText(r.copy_value || r.detail || '').then(() => {
+            div.querySelector('.result-detail').textContent = 'Copied!';
+          });
+        };
+        break;
+      default:
+        actionHandler = () => {
+          if (r.url) window.location.href = r.url;
+        };
     }
+
+    div.innerHTML = `
+      <div class="result-title">${icon} ${escapeHtml(r.title)}</div>
+      <div class="result-detail">${escapeHtml(r.detail)}</div>
+    `;
+    div.onclick = actionHandler;
     dom.commandResults.appendChild(div);
   });
   dom.commandResults.classList.remove('hidden');
