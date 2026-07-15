@@ -44,6 +44,12 @@ async function loadState() {
 async function saveState() {
   try {
     await chrome.storage.local.set({ [STORAGE_KEY]: state });
+    // Verify save succeeded
+    const verify = await chrome.storage.local.get(STORAGE_KEY);
+    if (!verify[STORAGE_KEY]) {
+      console.warn('Horizon: save verification failed, retrying...');
+      await chrome.storage.local.set({ [STORAGE_KEY]: state });
+    }
   } catch (e) {
     console.warn('Horizon: failed to save state', e);
   }
@@ -157,12 +163,12 @@ function renderFocus() {
   }
 }
 
-function handleFocusSubmit() {
+async function handleFocusSubmit() {
   const value = dom.focusInput.value.trim();
   if (value) {
     state.focus = value;
     state.focusDone = false;
-    saveState();
+    await saveState();
     // Sync to Hermes memory
     if (state.hermesEnabled && window.HorizonHermes) {
       window.HorizonHermes.setFocus(value);
@@ -467,13 +473,56 @@ function weatherCodeToEmoji(code) {
 // Quote
 // ============================================================
 
+const QUOTES = [
+  '"The best time to plant a tree was 20 years ago. The second best time is now." — Chinese Proverb',
+  '"What you do today can improve all your tomorrows." — Ralph Marston',
+  '"The secret of getting ahead is getting started." — Mark Twain',
+  '"It does not matter how slowly you go as long as you do not stop." — Confucius',
+  '"The only way to do great work is to love what you do." — Steve Jobs',
+  '"Believe you can and you\'re halfway there." — Theodore Roosevelt',
+  '"Act as if what you do makes a difference. It does." — William James',
+  '"Success is not final, failure is not fatal: it is the courage to continue that counts." — Winston Churchill',
+  '"The future depends on what you do today." — Mahatma Gandhi',
+  '"Don\'t watch the clock; do what it does. Keep going." — Sam Levenson',
+  '"The only limit to our realization of tomorrow is our doubts of today." — Franklin D. Roosevelt',
+  '"Quality is not an act, it is a habit." — Aristotle',
+  '"Strive not to be a success, but rather to be of value." — Albert Einstein',
+  '"The way to get started is to quit talking and begin doing." — Walt Disney',
+  '"Your time is limited, don\'t waste it living someone else\'s life." — Steve Jobs',
+  '"The best revenge is massive success." — Frank Sinatra',
+  '"I have not failed. I\'ve just found 10,000 ways that won\'t work." — Thomas Edison',
+  '"Whether you think you can or you think you can\'t, you\'re right." — Henry Ford',
+  '"The mind is everything. What you think you become." — Buddha',
+  '"An hour of clear thinking is worth more than a day of motion." — Unknown',
+  '"Simplicity is the ultimate sophistication." — Leonardo da Vinci',
+  '"The only person you are destined to become is the person you decide to be." — Ralph Waldo Emerson',
+  '"Everything you\'ve ever wanted is on the other side of fear." — George Addair',
+  '"Do one thing every day that scares you." — Eleanor Roosevelt',
+  '"The best way to predict the future is to create it." — Peter Drucker',
+  '"What lies behind us and what lies before us are tiny matters compared to what lies within us." — Ralph Waldo Emerson',
+  '"Perfection is not attainable, but if we chase perfection we can catch excellence." — Vince Lombardi',
+  '"If you want to lift yourself up, lift up someone else." — Booker T. Washington',
+  '"Start where you are. Use what you have. Do what you can." — Arthur Ashe',
+  '"It is during our darkest moments that we must focus to see the light." — Aristotle',
+];
+
+function getRandomQuote() {
+  return QUOTES[Math.floor(Math.random() * QUOTES.length)];
+}
+
 async function fetchQuote() {
+  // Show a local quote immediately
+  dom.quoteText.textContent = getRandomQuote();
+
+  // Try to refresh from API in the background
   try {
     const response = await fetch('https://api.quotable.io/random?maxLength=120');
-    const data = await response.json();
-    dom.quoteText.textContent = `"${data.content}" — ${data.author}`;
+    if (response.ok) {
+      const data = await response.json();
+      dom.quoteText.textContent = `"${data.content}" — ${data.author}`;
+    }
   } catch {
-    dom.quoteText.textContent = '"The best time to plant a tree was 20 years ago. The second best time is now."';
+    // Keep the local quote — already set
   }
 }
 
