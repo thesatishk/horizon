@@ -25,7 +25,9 @@
   },
 
   "permissions": [
-    "storage"
+    "storage",
+    "alarms",
+    "notifications"
   ],
 
   "optional_permissions": [

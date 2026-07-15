@@ -58,22 +58,65 @@ chrome.runtime.onInstalled.addListener((details) => {
 // Periodic checks
 // ============================================================
 
+chrome.alarms.create('poll-notifications', { periodInMinutes: 2 });
 chrome.alarms.create('refresh-briefing', { periodInMinutes: 5 });
 
+const shownNotifications = new Set();
+
 chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'poll-notifications') {
+    try {
+      const data = await chrome.storage.local.get('horizon:settings');
+      const settings = data['horizon:settings'];
+      if (!settings?.hermesEnabled) return;
+
+      const response = await fetch(`${settings.hermesUrl}/api/notifications`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) return;
+      
+      const { notifications } = await response.json();
+      if (!notifications || notifications.length === 0) {
+        chrome.action?.setBadgeText?.({ text: '' });
+        return;
+      }
+
+      // Show new notifications
+      for (const n of notifications) {
+        if (shownNotifications.has(n.id)) continue;
+        shownNotifications.add(n.id);
+
+        chrome.notifications?.create?.(n.id, {
+          type: 'basic',
+          iconUrl: 'icons/icon-128.png',
+          title: n.title,
+          message: n.body,
+          priority: n.urgency === 'now' ? 2 : 0,
+        });
+      }
+
+      // Badge count
+      const unshown = notifications.filter(n => !shownNotifications.has(n.id)).length;
+      if (unshown > 0) {
+        chrome.action?.setBadgeText?.({ text: String(unshown) });
+        chrome.action?.setBadgeBackgroundColor?.({ color: '#f59e0b' });
+      }
+    } catch {
+      // Bridge not available
+    }
+  }
+
   if (alarm.name === 'refresh-briefing') {
     try {
       const data = await chrome.storage.local.get('horizon:settings');
       const settings = data['horizon:settings'];
       
       if (settings?.hermesEnabled) {
-        // Ping Hermes to check availability
         const response = await fetch(`${settings.hermesUrl}/api/health`, {
           signal: AbortSignal.timeout(3000),
         });
         
         if (response.ok) {
-          // Update badge to show Hermes is connected
           chrome.action?.setBadgeText?.({ text: '●' });
           chrome.action?.setBadgeBackgroundColor?.({ color: '#4ade80' });
         } else {

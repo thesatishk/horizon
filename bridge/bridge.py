@@ -24,7 +24,25 @@ from urllib.parse import urlparse
 
 BRIDGE_DIR = Path.home() / ".horizon"
 BRIEFING_FILE = BRIDGE_DIR / "briefing.json"
+NOTIFICATIONS_FILE = BRIDGE_DIR / "notifications.json"
 PORT = 8942
+
+
+def load_notifications():
+    """Load pending notifications."""
+    if NOTIFICATIONS_FILE.exists():
+        try:
+            data = json.loads(NOTIFICATIONS_FILE.read_text())
+            return data if isinstance(data, list) else []
+        except (json.JSONDecodeError, OSError):
+            pass
+    return []
+
+
+def save_notifications(notifications):
+    """Save notifications to disk."""
+    BRIDGE_DIR.mkdir(parents=True, exist_ok=True)
+    NOTIFICATIONS_FILE.write_text(json.dumps(notifications, indent=2))
 
 
 def call_hermes(prompt, timeout=30):
@@ -136,6 +154,10 @@ class BridgeHandler(BaseHTTPRequestHandler):
             else:
                 self._send_json({"events": []})
 
+        elif path == "/api/notifications":
+            notifications = load_notifications()
+            self._send_json({"notifications": notifications})
+
         else:
             self._send_json({"error": "not found"}, status=404)
 
@@ -178,7 +200,6 @@ class BridgeHandler(BaseHTTPRequestHandler):
             focus = body.get("focus", "")
             if focus:
                 save_focus(focus)
-                # Also try to save to Hermes memory
                 call_hermes(
                     f"Save this to memory: my main focus for today is '{focus}'",
                     timeout=10,
@@ -186,6 +207,10 @@ class BridgeHandler(BaseHTTPRequestHandler):
                 self._send_json({"saved": True})
             else:
                 self._send_json({"saved": False}, status=400)
+
+        elif path == "/api/notifications/clear":
+            save_notifications([])
+            self._send_json({"cleared": True})
 
         else:
             self._send_json({"error": "not found"}, status=404)
