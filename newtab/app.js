@@ -599,6 +599,13 @@ function handleKeyboard(e) {
     return;
   }
 
+  // Right arrow — next background photo (when not in an input)
+  if (e.key === 'ArrowRight' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+    e.preventDefault();
+    fetchBackground();
+    return;
+  }
+
   // Escape — close panels/command bar
   if (e.key === 'Escape') {
     if (!dom.commandResults.classList.contains('hidden')) {
@@ -657,6 +664,10 @@ async function init() {
   $('#settings-close').onclick = () => dom.settingsPanel.classList.add('hidden');
 
   $('#add-link-btn').onclick = showAddLinkModal;
+
+  // Background refresh
+  const bgRefresh = $('#bg-refresh');
+  if (bgRefresh) bgRefresh.onclick = fetchBackground;
 
   dom.commandInput.oninput = () => {
     clearTimeout(commandDebounce);

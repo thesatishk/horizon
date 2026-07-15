@@ -3,14 +3,14 @@
    ============================================ */
 
 :root {
-  --text-primary: rgba(255, 255, 255, 0.95);
-  --text-secondary: rgba(255, 255, 255, 0.65);
-  --text-tertiary: rgba(255, 255, 255, 0.35);
+  --text-primary: rgba(255, 255, 255, 0.98);
+  --text-secondary: rgba(255, 255, 255, 0.8);
+  --text-tertiary: rgba(255, 255, 255, 0.5);
   --bg-overlay: rgba(0, 0, 0, 0.35);
   --panel-bg: rgba(20, 20, 30, 0.92);
   --panel-border: rgba(255, 255, 255, 0.08);
-  --accent: rgba(255, 255, 255, 0.25);
-  --accent-hover: rgba(255, 255, 255, 0.5);
+  --accent: rgba(255, 255, 255, 0.3);
+  --accent-hover: rgba(255, 255, 255, 0.6);
   --danger: rgba(255, 80, 80, 0.8);
   --radius: 12px;
   --radius-sm: 8px;
@@ -78,20 +78,20 @@ body {
 
 .time {
   font-size: clamp(72px, 10vw, 140px);
-  font-weight: 200;
-  letter-spacing: -3px;
+  font-weight: 300;
+  letter-spacing: -2px;
   line-height: 1;
   margin-bottom: 8px;
-  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.5), 0 0 100px rgba(255, 255, 255, 0.05);
   cursor: default;
 }
 
 .greeting {
   font-size: clamp(20px, 2.8vw, 36px);
-  font-weight: 300;
+  font-weight: 400;
   margin-bottom: 40px;
   color: var(--text-secondary);
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
   min-height: 44px;
   transition: opacity var(--transition);
 }
@@ -112,8 +112,8 @@ body {
   border: none;
   border-bottom: 2px solid var(--accent);
   color: var(--text-primary);
-  font-size: 20px;
-  font-weight: 300;
+  font-size: 22px;
+  font-weight: 400;
   text-align: center;
   padding: 8px 16px 12px;
   outline: none;
@@ -131,8 +131,8 @@ body {
 }
 
 .focus-display {
-  font-size: 24px;
-  font-weight: 300;
+  font-size: 26px;
+  font-weight: 400;
   padding: 8px 16px 12px;
   cursor: pointer;
   transition: opacity var(--transition);
@@ -142,6 +142,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 10px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
 }
 
 .focus-display .check-mark {
@@ -168,9 +169,9 @@ body {
   position: fixed;
   z-index: 3;
   color: var(--text-secondary);
-  font-size: 14px;
-  font-weight: 300;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  font-size: 15px;
+  font-weight: 400;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 
 .weather-widget {
@@ -182,11 +183,11 @@ body {
 }
 
 #weather-icon {
-  font-size: 20px;
+  font-size: 22px;
 }
 
 #weather-temp {
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .quote-widget {
@@ -196,9 +197,12 @@ body {
   text-align: center;
   max-width: 500px;
   font-style: italic;
+  font-weight: 400;
+  font-size: 15px;
   line-height: 1.5;
   cursor: default;
   transition: opacity var(--transition);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 
 /* ============================================
@@ -411,6 +415,52 @@ body {
 #todo-count {
   font-size: 11px;
   color: var(--text-secondary);
+}
+
+/* ============================================
+   Background Controls
+   ============================================ */
+
+.bg-controls {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+body:hover .bg-controls,
+.bg-controls.always-show {
+  opacity: 1;
+}
+
+.bg-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 16px;
+  transition: all var(--transition);
+}
+
+.bg-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--text-primary);
+  transform: scale(1.1);
+}
+
+.bg-btn:active {
+  transform: scale(0.95);
 }
 
 /* ============================================
