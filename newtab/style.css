@@ -600,6 +600,7 @@ body {
    ============================================ */
 
 .command-bar {
+  display: none; /* disabled — re-enable when Hermes bridge is stable */
   position: fixed;
   bottom: 80px;
   left: 50%;

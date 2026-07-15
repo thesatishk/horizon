@@ -867,12 +867,8 @@ function escapeHtml(str) {
 // ============================================================
 
 function handleKeyboard(e) {
-  // Cmd/Ctrl + K — open command bar
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-    e.preventDefault();
-    showCommandBar();
-    return;
-  }
+  // Cmd/Ctrl + K — disabled (Hermes bridge WIP)
+  /* if ((e.metaKey || e.ctrlKey) && e.key === 'k') { ... } */
 
   // Right arrow — next background photo (when not in an input)
   if (e.key === 'ArrowRight' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
@@ -893,7 +889,8 @@ function handleKeyboard(e) {
     return;
   }
 
-  // Just start typing — focus the command bar (if not in an input)
+  // Just start typing — disabled (Hermes bridge WIP)
+  /*
   if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
     const tag = document.activeElement?.tagName;
     if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
@@ -901,6 +898,7 @@ function handleKeyboard(e) {
       dom.commandInput.value = e.key;
     }
   }
+  */
 }
 
 // ============================================================
