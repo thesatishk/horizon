@@ -255,14 +255,14 @@ async function fetchWeatherByCoords(latitude, longitude) {
     dom.weatherTemp.textContent = `${temp}${unit}`;
     dom.weatherIcon.textContent = weatherCodeToEmoji(code);
 
-    // Reverse geocode for city name
+    // Reverse geocode for city name (BigDataCloud — CORS-friendly, free)
     try {
       const geoRes = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10`
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
       );
       if (geoRes.ok) {
         const geoData = await geoRes.json();
-        const city = geoData.address?.city || geoData.address?.town || geoData.address?.county || '';
+        const city = geoData.city || geoData.locality || '';
         dom.weatherCity.textContent = city;
       }
     } catch {
@@ -271,27 +271,11 @@ async function fetchWeatherByCoords(latitude, longitude) {
   }
 }
 
-async function fetchWeatherByIP() {
-  // IP-based geolocation fallback — no user permission needed
-  try {
-    const ipRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2672&longitude=-97.7431&current_weather=true&temperature_unit=fahrenheit&timezone=auto');
-    if (!ipRes.ok) throw new Error('IP weather failed');
-    const data = await ipRes.json();
-
-    if (data.current_weather) {
-      const units = state.tempUnit;
-      const temp = units === 'imperial'
-        ? Math.round(data.current_weather.temperature)
-        : Math.round((data.current_weather.temperature - 32) * 5 / 9);
-      const unit = units === 'imperial' ? '°F' : '°C';
-      dom.weatherTemp.textContent = `${temp}${unit}`;
-      dom.weatherIcon.textContent = weatherCodeToEmoji(data.current_weather.weathercode);
-    }
-  } catch {
-    dom.weatherTemp.textContent = '--°';
-    dom.weatherIcon.textContent = '🌤';
-  }
-  dom.weatherCity.textContent = '';
+async function fetchWeatherByFallback() {
+  // Austin, TX fallback when geolocation is denied
+  const lat = 30.2672;
+  const lon = -97.7431;
+  await fetchWeatherByCoords(lat, lon);
 }
 
 async function fetchWeather() {
@@ -300,8 +284,8 @@ async function fetchWeather() {
     const position = await requestGeolocation();
     await fetchWeatherByCoords(position.coords.latitude, position.coords.longitude);
   } catch {
-    // Fall back to a default location or IP-based
-    await fetchWeatherByIP();
+    // Fall back to Austin, TX
+    await fetchWeatherByFallback();
   }
 }
 
