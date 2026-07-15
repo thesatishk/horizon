@@ -4,12 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Horizon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <!-- Background layer -->
   <div id="background"></div>
   <div id="overlay"></div>
+
+  <!-- Top-right widgets (Momentum layout) -->
+  <div id="top-right">
+    <div id="weather" class="weather-top">
+      <span id="weather-icon"></span>
+      <span id="weather-temp"></span>
+      <span id="weather-city"></span>
+    </div>
+    <button id="settings-toggle" class="settings-btn" title="Settings">⚙</button>
+  </div>
 
   <!-- Background controls -->
   <div class="bg-controls">
@@ -25,13 +38,6 @@
       <div id="focus-display" class="focus-display"></div>
     </div>
   </main>
-
-  <!-- Widgets -->
-  <div id="weather" class="widget weather-widget">
-    <span id="weather-icon"></span>
-    <span id="weather-temp"></span>
-    <span id="weather-city"></span>
-  </div>
 
   <div id="quote" class="widget quote-widget">
     <span id="quote-text"></span>
@@ -58,8 +64,6 @@
   </div>
 
   <!-- Settings -->
-  <button id="settings-toggle" class="widget settings-toggle" title="Settings">⚙</button>
-
   <div id="settings-panel" class="settings-panel hidden">
     <div class="settings-header">
       <h2>Settings</h2>
