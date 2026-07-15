@@ -1,0 +1,17 @@
+{
+  "name": "horizon",
+  "version": "1.0.0",
+  "description": "A beautiful, AI-powered new tab page. Cross-browser. Hermes-ready.",
+  "private": true,
+  "scripts": {
+    "build:chrome": "mkdir -p dist/chrome && cp -r manifest.json newtab icons background.js dist/chrome/ && cd dist/chrome && zip -r ../horizon-chrome.zip .",
+    "build:firefox": "mkdir -p dist/firefox && cp -r manifest.json newtab icons background.js dist/firefox/ && cd dist/firefox && zip -r ../horizon-firefox.zip .",
+    "build": "npm run build:chrome && npm run build:firefox",
+    "lint": "web-ext lint --source-dir=.",
+    "dev:chrome": "web-ext run --source-dir=. --target=chromium",
+    "dev:firefox": "web-ext run --source-dir=."
+  },
+  "devDependencies": {
+    "web-ext": "^8.0.0"
+  }
+}

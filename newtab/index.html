@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Background layer -->
+  <div id="background"></div>
+  <div id="overlay"></div>
+
+  <!-- Main centered content -->
+  <main id="main-content">
+    <div id="clock" class="time"></div>
+    <div id="greeting" class="greeting"></div>
+    <div id="focus-area" class="focus">
+      <input type="text" id="focus-input" placeholder="What is your main focus today?" maxlength="120" autocomplete="off">
+      <div id="focus-display" class="focus-display"></div>
+    </div>
+  </main>
+
+  <!-- Widgets -->
+  <div id="weather" class="widget weather-widget">
+    <span id="weather-icon"></span>
+    <span id="weather-temp"></span>
+    <span id="weather-city"></span>
+  </div>
+
+  <div id="quote" class="widget quote-widget">
+    <span id="quote-text"></span>
+  </div>
+
+  <!-- Quick links -->
+  <div id="links-bar" class="links-bar">
+    <div id="links-container"></div>
+    <button id="add-link-btn" class="icon-btn" title="Add link">+</button>
+  </div>
+
+  <!-- To-do panel -->
+  <button id="todo-toggle" class="widget todo-toggle" title="To-do list">
+    <span id="todo-count">0</span>
+  </button>
+
+  <div id="todo-panel" class="todo-panel hidden">
+    <div class="todo-header">
+      <h2>To-do</h2>
+      <button id="todo-close" class="icon-btn">×</button>
+    </div>
+    <input type="text" id="todo-input" placeholder="Add a to-do..." autocomplete="off">
+    <ul id="todo-list"></ul>
+  </div>
+
+  <!-- Settings -->
+  <button id="settings-toggle" class="widget settings-toggle" title="Settings">⚙</button>
+
+  <div id="settings-panel" class="settings-panel hidden">
+    <div class="settings-header">
+      <h2>Settings</h2>
+      <button id="settings-close" class="icon-btn">×</button>
+    </div>
+    <div class="settings-body">
+      <label>
+        <span>Your name</span>
+        <input type="text" id="setting-name" placeholder="Your name" maxlength="50">
+      </label>
+      <label>
+        <span>Clock format</span>
+        <select id="setting-clock-format">
+          <option value="12">12-hour</option>
+          <option value="24">24-hour</option>
+        </select>
+      </label>
+      <label>
+        <span>Show seconds</span>
+        <input type="checkbox" id="setting-show-seconds">
+      </label>
+      <label>
+        <span>Temperature unit</span>
+        <select id="setting-unit">
+          <option value="imperial">Fahrenheit</option>
+          <option value="metric">Celsius</option>
+        </select>
+      </label>
+      <label>
+        <span>Photo category</span>
+        <select id="setting-photo-category">
+          <option value="nature">Nature</option>
+          <option value="minimal">Minimal</option>
+          <option value="architecture">Architecture</option>
+          <option value="travel">Travel</option>
+        </select>
+      </label>
+      <label>
+        <span>Hermes integration</span>
+        <input type="checkbox" id="setting-hermes">
+      </label>
+      <label id="hermes-url-label" style="display:none">
+        <span>Hermes API URL</span>
+        <input type="text" id="setting-hermes-url" placeholder="http://localhost:8942">
+      </label>
+    </div>
+  </div>
+
+  <!-- Search / Hermes command bar -->
+  <div id="command-bar" class="command-bar">
+    <input type="text" id="command-input" placeholder="Ask Hermes or search..." autocomplete="off">
+    <div id="command-results" class="command-results hidden"></div>
+  </div>
+
+  <script src="hermes.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

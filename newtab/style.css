@@ -1,0 +1,705 @@
+/* ============================================
+   Horizon — A beautiful new tab page
+   ============================================ */
+
+:root {
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.65);
+  --text-tertiary: rgba(255, 255, 255, 0.35);
+  --bg-overlay: rgba(0, 0, 0, 0.35);
+  --panel-bg: rgba(20, 20, 30, 0.92);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --accent: rgba(255, 255, 255, 0.25);
+  --accent-hover: rgba(255, 255, 255, 0.5);
+  --danger: rgba(255, 80, 80, 0.8);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  color: var(--text-primary);
+  background: #0d1117;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* ============================================
+   Background
+   ============================================ */
+
+#background {
+  position: fixed;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: opacity 1.5s ease-in-out;
+  z-index: 0;
+}
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.15) 40%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+  z-index: 1;
+}
+
+/* ============================================
+   Main Content
+   ============================================ */
+
+#main-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 2;
+  width: 90vw;
+  max-width: 700px;
+}
+
+.time {
+  font-size: clamp(72px, 10vw, 140px);
+  font-weight: 200;
+  letter-spacing: -3px;
+  line-height: 1;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+  cursor: default;
+}
+
+.greeting {
+  font-size: clamp(20px, 2.8vw, 36px);
+  font-weight: 300;
+  margin-bottom: 40px;
+  color: var(--text-secondary);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
+  min-height: 44px;
+  transition: opacity var(--transition);
+}
+
+/* ============================================
+   Focus
+   ============================================ */
+
+.focus {
+  position: relative;
+  margin: 0 auto;
+  max-width: 520px;
+}
+
+#focus-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--accent);
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 300;
+  text-align: center;
+  padding: 8px 16px 12px;
+  outline: none;
+  transition: border-color var(--transition);
+  letter-spacing: 0.5px;
+}
+
+#focus-input::placeholder {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+#focus-input:focus {
+  border-bottom-color: var(--accent-hover);
+}
+
+.focus-display {
+  font-size: 24px;
+  font-weight: 300;
+  padding: 8px 16px 12px;
+  cursor: pointer;
+  transition: opacity var(--transition);
+  color: var(--text-secondary);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.focus-display .check-mark {
+  opacity: 0.5;
+  cursor: pointer;
+  font-size: 20px;
+  transition: opacity var(--transition);
+}
+
+.focus-display .check-mark:hover {
+  opacity: 1;
+}
+
+.focus-display.done {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+/* ============================================
+   Widgets
+   ============================================ */
+
+.widget {
+  position: fixed;
+  z-index: 3;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 300;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.weather-widget {
+  bottom: 32px;
+  left: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#weather-icon {
+  font-size: 20px;
+}
+
+#weather-temp {
+  font-weight: 400;
+}
+
+.quote-widget {
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  max-width: 500px;
+  font-style: italic;
+  line-height: 1.5;
+  cursor: default;
+  transition: opacity var(--transition);
+}
+
+/* ============================================
+   Links Bar
+   ============================================ */
+
+.links-bar {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#links-container {
+  display: flex;
+  gap: 6px;
+}
+
+.link-tile {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 500;
+  overflow: hidden;
+}
+
+.link-tile:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.link-tile img {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+}
+
+.link-tile .delete-link {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: white;
+  font-size: 10px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+}
+
+.link-tile:hover .delete-link {
+  display: flex;
+}
+
+/* ============================================
+   Panel Styles (shared)
+   ============================================ */
+
+.todo-panel,
+.settings-panel {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 320px;
+  max-height: 70vh;
+  background: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  z-index: 10;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.todo-header,
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.todo-header h2,
+.settings-header h2 {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ============================================
+   To-do Panel
+   ============================================ */
+
+#todo-input {
+  width: calc(100% - 40px);
+  margin: 12px 20px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+#todo-input:focus {
+  border-color: var(--accent-hover);
+}
+
+#todo-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+#todo-list {
+  list-style: none;
+  padding: 0 20px 20px;
+  overflow-y: auto;
+  max-height: calc(70vh - 140px);
+}
+
+#todo-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: color var(--transition);
+}
+
+#todo-list li.completed span {
+  text-decoration: line-through;
+  opacity: 0.4;
+}
+
+#todo-list li input[type="checkbox"] {
+  accent-color: var(--accent-hover);
+  cursor: pointer;
+}
+
+#todo-list li .delete-todo {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+#todo-list li:hover .delete-todo {
+  opacity: 1;
+}
+
+#todo-list li .delete-todo:hover {
+  color: var(--danger);
+}
+
+.todo-toggle {
+  bottom: 90px;
+  right: 32px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  font-size: 16px;
+}
+
+.todo-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#todo-count {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   Settings Panel
+   ============================================ */
+
+.settings-toggle {
+  bottom: 32px;
+  right: 32px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.settings-toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.settings-body {
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: calc(70vh - 80px);
+  overflow-y: auto;
+}
+
+.settings-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-body label:has(input[type="checkbox"]) {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-body label span {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.settings-body input[type="text"],
+.settings-body select {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+}
+
+.settings-body input[type="checkbox"] {
+  accent-color: var(--accent-hover);
+  cursor: pointer;
+}
+
+/* ============================================
+   Command Bar
+   ============================================ */
+
+.command-bar {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  width: 90vw;
+  max-width: 520px;
+}
+
+#command-input {
+  width: 100%;
+  padding: 12px 20px;
+  background: rgba(30, 30, 45, 0.85);
+  backdrop-filter: blur(15px);
+  border: 1px solid var(--panel-border);
+  border-radius: 24px;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 300;
+  outline: none;
+  transition: all var(--transition);
+  opacity: 0;
+  pointer-events: none;
+}
+
+#command-input.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#command-input:focus {
+  border-color: var(--accent-hover);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+#command-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.command-results {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.command-results .result-item {
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background var(--transition);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.command-results .result-item:last-child {
+  border-bottom: none;
+}
+
+.command-results .result-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.command-results .result-item .result-title {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.command-results .result-item .result-detail {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+/* ============================================
+   Icon Button
+   ============================================ */
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all var(--transition);
+}
+
+.icon-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================
+   Transitions & States
+   ============================================ */
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Show settings toggle on hover near bottom-right */
+.settings-toggle {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+body:hover .settings-toggle,
+.settings-toggle.always-show {
+  opacity: 1;
+}
+
+/* ============================================
+   Add Link Modal
+   ============================================ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 360px;
+  box-shadow: 0 12px 60px rgba(0, 0, 0, 0.5);
+}
+
+.modal h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+.modal label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.modal label span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.modal input {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+}
+
+.modal input:focus {
+  border-color: var(--accent-hover);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.modal-actions button {
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--panel-border);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all var(--transition);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--text-primary);
+  border-color: var(--accent-hover) !important;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
