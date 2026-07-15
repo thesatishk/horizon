@@ -163,6 +163,10 @@ function handleFocusSubmit() {
     state.focus = value;
     state.focusDone = false;
     saveState();
+    // Sync to Hermes memory
+    if (state.hermesEnabled && window.HorizonHermes) {
+      window.HorizonHermes.setFocus(value);
+    }
   }
   dom.focusInput.blur();
   renderFocus();
@@ -680,14 +684,20 @@ async function handleCommand(query) {
       state.focus = focusText;
       state.focusDone = false;
       saveState();
+      if (state.hermesEnabled && window.HorizonHermes) {
+        window.HorizonHermes.setFocus(focusText);
+      }
       renderFocus();
       hideCommandBar();
     }
     return;
   }
 
-  // If Hermes is enabled, try the Hermes API
+  // If Hermes is enabled, query Hermes
   if (state.hermesEnabled && window.HorizonHermes) {
+    dom.commandResults.innerHTML = '<div class="result-item"><div class="result-title">Thinking...</div></div>';
+    dom.commandResults.classList.remove('hidden');
+    
     try {
       const results = await window.HorizonHermes.query(query);
       if (results && results.length > 0) {
@@ -695,13 +705,13 @@ async function handleCommand(query) {
         return;
       }
     } catch {
-      // Fall through to local search
+      // Fall through to web search
     }
   }
 
   // Fallback: web search
   dom.commandResults.innerHTML = `
-    <div class="result-item" onclick="window.location.href='https://www.google.com/search?q=${encodeURIComponent(query)}'">
+    <div class="result-item" style="cursor:pointer" onclick="window.location.href='https://www.google.com/search?q=${encodeURIComponent(query)}'">
       <div class="result-title">🔍 Search Google for "${escapeHtml(query)}"</div>
     </div>
   `;
@@ -728,7 +738,7 @@ function renderCommandResults(results) {
 }
 
 // ============================================================
-// Hermes Bridge — check for updates from Hermes cron
+// Hermes Briefing
 // ============================================================
 
 async function checkHermesBriefing() {
@@ -736,19 +746,25 @@ async function checkHermesBriefing() {
 
   try {
     const briefing = await window.HorizonHermes.getBriefing();
-    if (briefing) {
-      if (briefing.focus && !state.focus) {
-        state.focus = briefing.focus;
-        saveState();
-        renderFocus();
-      }
-      if (briefing.quote) {
-        dom.quoteText.textContent = briefing.quote;
-      }
+    if (briefing && briefing.focus_suggestion) {
+      showBriefing(briefing);
     }
   } catch {
-    // Hermes not available — that's fine
+    // Hermes bridge not available — that's fine
   }
+}
+
+function showBriefing(briefing) {
+  const widget = document.getElementById('briefing');
+  if (!widget) return;
+
+  document.getElementById('briefing-greeting').textContent = briefing.calendar_summary || '';
+  document.getElementById('briefing-focus').textContent = briefing.focus_suggestion || '';
+  document.getElementById('briefing-calendar').textContent = briefing.weather_note || '';
+  document.getElementById('briefing-note').textContent = briefing.quick_note || '';
+  document.getElementById('briefing-dismiss').onclick = () => widget.classList.add('hidden');
+  
+  widget.classList.remove('hidden');
 }
 
 // ============================================================
