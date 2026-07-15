@@ -604,7 +604,7 @@ body {
   bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 4;
+  z-index: 6;
   width: 90vw;
   max-width: 520px;
 }

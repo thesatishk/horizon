@@ -709,6 +709,9 @@ function bindSettings() {
 let commandDebounce;
 
 function showCommandBar() {
+  // Dismiss briefing card if visible
+  const briefing = document.getElementById('briefing');
+  if (briefing) briefing.classList.add('hidden');
   dom.commandInput.classList.add('visible');
   dom.commandInput.focus();
 }
@@ -947,11 +950,8 @@ async function init() {
   };
   dom.commandInput.onkeydown = (e) => {
     if (e.key === 'Enter') {
-      const query = dom.commandInput.value.trim();
-      if (query) {
-        window.location.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-      }
-      hideCommandBar();
+      e.preventDefault();
+      handleCommand(dom.commandInput.value);
     }
   };
 
