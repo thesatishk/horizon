@@ -15,6 +15,7 @@ let state = {
   showSeconds: false,
   tempUnit: 'imperial',
   photoCategory: 'nature',
+  unsplashKey: '',
   hermesEnabled: false,
   hermesUrl: 'http://localhost:8942',
   focus: '',
@@ -169,13 +170,56 @@ function handleFocusSubmit() {
 // Background
 // ============================================================
 
-// LoremFlickr category mapping (free, no API key, always works)
-const PHOTO_CATEGORIES = {
-  nature: 'nature',
-  minimal: 'water',
-  architecture: 'architecture',
-  travel: 'city',
+// Curated keywords that produce Momentum-style dramatic photography
+const PHOTO_KEYWORDS = {
+  nature: 'mountain,sunset',
+  water: 'ocean,waves',
+  architecture: 'architecture,modern',
+  city: 'city,night',
 };
+
+// Rotating keywords for variety within each category
+const KEYWORD_POOLS = {
+  nature: ['mountain sunrise', 'alpine lake', 'dramatic sky', 'sunset landscape', 'golden hour nature', 'foggy forest', 'aurora night', 'canyon vista'],
+  water: ['ocean waves', 'tropical beach', 'aerial coastline', 'calm lake', 'crystal water', 'island paradise'],
+  architecture: ['modern building', 'city skyline', 'glass architecture', 'bridges night', 'urban geometry', 'historic castle'],
+  city: ['city night', 'tokyo streets', 'aerial city', 'urban sunset', 'city lights', 'skyline dusk'],
+};
+
+function getPhotoUrl(category) {
+  // Pick a random keyword from the pool for variety
+  const pool = KEYWORD_POOLS[category] || KEYWORD_POOLS.nature;
+  const keyword = pool[Math.floor(Math.random() * pool.length)];
+  // LoremFlickr supports multi-word keywords with commas
+  const query = keyword.replace(/\s+/g, ',');
+  return `https://loremflickr.com/1920/1080/${query}?random=${Date.now()}`;
+}
+
+// Unsplash API (optional — enter key in settings for premium photos)
+const UNSPLASH_SEARCHES = {
+  nature: 'dramatic landscape nature',
+  water: 'ocean waves aerial',
+  architecture: 'modern architecture dramatic',
+  city: 'city skyline night',
+};
+
+async function fetchFromUnsplash(category) {
+  const accessKey = state.unsplashKey;
+  if (!accessKey) return null;
+
+  const query = UNSPLASH_SEARCHES[category] || UNSPLASH_SEARCHES.nature;
+  try {
+    const resp = await fetch(
+      `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=landscape&w=1920&h=1080`,
+      { headers: { Authorization: `Client-ID ${accessKey}` }, signal: AbortSignal.timeout(8000) }
+    );
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data.urls?.raw + '&w=1920&h=1080&fit=crop' || data.urls?.full;
+  } catch {
+    return null;
+  }
+}
 
 const FALLBACK_GRADIENTS = [
   'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
@@ -189,11 +233,7 @@ function applyFallbackBackground() {
 }
 
 async function fetchBackground() {
-  const category = PHOTO_CATEGORIES[state.photoCategory] || 'nature';
-  // Cache-bust with timestamp so we get a fresh photo each time
-  const imageUrl = `https://loremflickr.com/1920/1080/${category}?random=${Date.now()}`;
-
-  const img = new Image();
+  const category = state.photoCategory || 'nature';
   let resolved = false;
 
   const resolve = (url) => {
@@ -202,16 +242,31 @@ async function fetchBackground() {
     dom.background.style.backgroundImage = `url(${url})`;
   };
 
-  img.onload = () => resolve(imageUrl);
-  img.onerror = () => {
-    // Try Picsum as fallback
-    const fallbackImg = new Image();
-    fallbackImg.onload = () => resolve(`https://picsum.photos/1920/1080?random=${Date.now()}`);
-    fallbackImg.onerror = () => applyFallbackBackground();
-    fallbackImg.src = `https://picsum.photos/1920/1080?random=${Date.now()}`;
-  };
+  // Try Unsplash API first (if key is configured)
+  if (state.unsplashKey) {
+    const unsplashUrl = await fetchFromUnsplash(category);
+    if (unsplashUrl) {
+      const img = new Image();
+      img.onload = () => resolve(unsplashUrl);
+      img.onerror = () => {}; // fall through
+      img.src = unsplashUrl;
+    }
+  }
 
-  img.src = imageUrl;
+  // LoremFlickr with curated keywords
+  if (!resolved) {
+    const imageUrl = getPhotoUrl(category);
+    const img = new Image();
+    img.onload = () => resolve(imageUrl);
+    img.onerror = () => {
+      // Try Picsum as fallback
+      const fallbackImg = new Image();
+      fallbackImg.onload = () => resolve(`https://picsum.photos/1920/1080?random=${Date.now()}`);
+      fallbackImg.onerror = () => applyFallbackBackground();
+      fallbackImg.src = `https://picsum.photos/1920/1080?random=${Date.now()}`;
+    };
+    img.src = imageUrl;
+  }
 
   setTimeout(() => {
     if (!resolved) applyFallbackBackground();
@@ -456,6 +511,7 @@ function updateSettingsForm() {
   $('#setting-show-seconds').checked = state.showSeconds;
   $('#setting-unit').value = state.tempUnit;
   $('#setting-photo-category').value = state.photoCategory;
+  $('#setting-unsplash-key').value = state.unsplashKey || '';
   $('#setting-hermes').checked = state.hermesEnabled;
   $('#setting-hermes-url').value = state.hermesUrl;
   $('#hermes-url-label').style.display = state.hermesEnabled ? 'flex' : 'none';
@@ -467,6 +523,7 @@ function bindSettings() {
   $('#setting-show-seconds').onchange = (e) => { state.showSeconds = e.target.checked; saveState(); };
   $('#setting-unit').onchange = (e) => { state.tempUnit = e.target.value; saveState(); fetchWeather(); };
   $('#setting-photo-category').onchange = (e) => { state.photoCategory = e.target.value; saveState(); fetchBackground(); };
+  $('#setting-unsplash-key').oninput = (e) => { state.unsplashKey = e.target.value.trim(); saveState(); };
   $('#setting-hermes').onchange = (e) => {
     state.hermesEnabled = e.target.checked;
     $('#hermes-url-label').style.display = e.target.checked ? 'flex' : 'none';
