@@ -42,7 +42,7 @@ window.HorizonHermes = (function () {
           context: 'horizon-newtab',
           max_results: 5,
         }),
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(25000),
       });
 
       if (!response.ok) return null;
@@ -62,7 +62,7 @@ window.HorizonHermes = (function () {
     const base = await getBaseUrl();
     try {
       const response = await fetch(`${base}/api/briefing`, {
-        signal: AbortSignal.timeout(3000),
+        signal: AbortSignal.timeout(8000),
       });
       if (!response.ok) return null;
       return await response.json();
@@ -96,7 +96,7 @@ window.HorizonHermes = (function () {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ focus: text }),
-        signal: AbortSignal.timeout(3000),
+        signal: AbortSignal.timeout(8000),
       });
     } catch {
       // Silent fail — focus is still stored locally

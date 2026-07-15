@@ -13,6 +13,8 @@ Endpoints:
 
 import json
 import os
+import re
+import socket
 import subprocess
 import sys
 import time
@@ -192,6 +194,7 @@ class BridgeHandler(BaseHTTPRequestHandler):
 def main():
     BRIDGE_DIR.mkdir(parents=True, exist_ok=True)
     server = HTTPServer(("127.0.0.1", PORT), BridgeHandler)
+    server.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     print(f"🌅 Horizon Bridge running on http://localhost:{PORT}")
     print(f"   Briefing: http://localhost:{PORT}/api/briefing")
     print(f"   Query:    POST http://localhost:{PORT}/api/query")
