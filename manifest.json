@@ -42,7 +42,7 @@
   },
 
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' https://source.unsplash.com https://images.unsplash.com https://www.google.com data:; connect-src 'self' http://localhost:* https://source.unsplash.com https://images.unsplash.com https://api.open-meteo.com https://nominatim.openstreetmap.org https://api.quotable.io"
+    "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' https://loremflickr.com https://picsum.photos https://images.unsplash.com https://www.google.com data:; connect-src 'self' http://localhost:* https://loremflickr.com https://picsum.photos https://api.open-meteo.com https://nominatim.openstreetmap.org https://api.quotable.io"
   },
 
   "web_accessible_resources": [

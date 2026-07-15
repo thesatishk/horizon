@@ -169,14 +169,14 @@ function handleFocusSubmit() {
 // Background
 // ============================================================
 
-const UNSPLASH_COLLECTIONS = {
-  nature: '317099',
-  minimal: '327760',
-  architecture: '3348849',
-  travel: '181581',
+// LoremFlickr category mapping (free, no API key, always works)
+const PHOTO_CATEGORIES = {
+  nature: 'nature',
+  minimal: 'water',
+  architecture: 'architecture',
+  travel: 'city',
 };
 
-// Fallback gradient so the page never shows a black void
 const FALLBACK_GRADIENTS = [
   'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
   'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
@@ -189,30 +189,32 @@ function applyFallbackBackground() {
 }
 
 async function fetchBackground() {
-  const collection = UNSPLASH_COLLECTIONS[state.photoCategory] || UNSPLASH_COLLECTIONS.nature;
-
-  // Use Unsplash's source API (no key needed)
-  const sourceUrl = `https://source.unsplash.com/collection/${collection}/1920x1080`;
+  const category = PHOTO_CATEGORIES[state.photoCategory] || 'nature';
+  // Cache-bust with timestamp so we get a fresh photo each time
+  const imageUrl = `https://loremflickr.com/1920/1080/${category}?random=${Date.now()}`;
 
   const img = new Image();
-  let loaded = false;
+  let resolved = false;
 
-  img.onload = () => {
-    loaded = true;
-    dom.background.style.backgroundImage = `url(${sourceUrl})`;
+  const resolve = (url) => {
+    if (resolved) return;
+    resolved = true;
+    dom.background.style.backgroundImage = `url(${url})`;
   };
 
+  img.onload = () => resolve(imageUrl);
   img.onerror = () => {
-    if (!loaded) applyFallbackBackground();
+    // Try Picsum as fallback
+    const fallbackImg = new Image();
+    fallbackImg.onload = () => resolve(`https://picsum.photos/1920/1080?random=${Date.now()}`);
+    fallbackImg.onerror = () => applyFallbackBackground();
+    fallbackImg.src = `https://picsum.photos/1920/1080?random=${Date.now()}`;
   };
 
-  img.src = sourceUrl;
+  img.src = imageUrl;
 
-  // Timeout: if image doesn't load within 8 seconds, fall back
   setTimeout(() => {
-    if (!loaded && !dom.background.style.backgroundImage) {
-      applyFallbackBackground();
-    }
+    if (!resolved) applyFallbackBackground();
   }, 8000);
 }
 
