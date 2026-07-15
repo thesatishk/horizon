@@ -474,36 +474,60 @@ function weatherCodeToEmoji(code) {
 // ============================================================
 
 const QUOTES = [
-  '"The best time to plant a tree was 20 years ago. The second best time is now." — Chinese Proverb',
-  '"What you do today can improve all your tomorrows." — Ralph Marston',
+  // Mark Twain
   '"The secret of getting ahead is getting started." — Mark Twain',
-  '"It does not matter how slowly you go as long as you do not stop." — Confucius',
-  '"The only way to do great work is to love what you do." — Steve Jobs',
-  '"Believe you can and you\'re halfway there." — Theodore Roosevelt',
+  '"Twenty years from now you will be more disappointed by the things you didn\'t do than by the ones you did." — Mark Twain',
+  '"Continuous improvement is better than delayed perfection." — Mark Twain',
+  '"The two most important days in your life are the day you are born and the day you find out why." — Mark Twain',
+
+  // Alan Watts
+  '"The only way to make sense out of change is to plunge into it, move with it, and join the dance." — Alan Watts',
+  '"You are the universe experiencing itself." — Alan Watts',
+  '"Muddy water is best cleared by leaving it alone." — Alan Watts',
+  '"This is the real secret of life — to be completely engaged with what you are doing in the here and now." — Alan Watts',
+
+  // Jiddu Krishnamurti
+  '"It is no measure of health to be well adjusted to a profoundly sick society." — Jiddu Krishnamurti',
+  '"The ability to observe without evaluating is the highest form of intelligence." — Jiddu Krishnamurti',
+  '"In oneself lies the whole world and if you know how to look and learn, the door is there and the key is in your hand." — Jiddu Krishnamurti',
+
+  // William James
   '"Act as if what you do makes a difference. It does." — William James',
-  '"Success is not final, failure is not fatal: it is the courage to continue that counts." — Winston Churchill',
-  '"The future depends on what you do today." — Mahatma Gandhi',
-  '"Don\'t watch the clock; do what it does. Keep going." — Sam Levenson',
-  '"The only limit to our realization of tomorrow is our doubts of today." — Franklin D. Roosevelt',
-  '"Quality is not an act, it is a habit." — Aristotle',
-  '"Strive not to be a success, but rather to be of value." — Albert Einstein',
-  '"The way to get started is to quit talking and begin doing." — Walt Disney',
-  '"Your time is limited, don\'t waste it living someone else\'s life." — Steve Jobs',
-  '"The best revenge is massive success." — Frank Sinatra',
-  '"I have not failed. I\'ve just found 10,000 ways that won\'t work." — Thomas Edison',
-  '"Whether you think you can or you think you can\'t, you\'re right." — Henry Ford',
-  '"The mind is everything. What you think you become." — Buddha',
-  '"An hour of clear thinking is worth more than a day of motion." — Unknown',
-  '"Simplicity is the ultimate sophistication." — Leonardo da Vinci',
-  '"The only person you are destined to become is the person you decide to be." — Ralph Waldo Emerson',
-  '"Everything you\'ve ever wanted is on the other side of fear." — George Addair',
-  '"Do one thing every day that scares you." — Eleanor Roosevelt',
-  '"The best way to predict the future is to create it." — Peter Drucker',
+  '"The greatest weapon against stress is our ability to choose one thought over another." — William James',
+  '"The art of being wise is the art of knowing what to overlook." — William James',
+
+  // Henry David Thoreau
+  '"Go confidently in the direction of your dreams. Live the life you have imagined." — Henry David Thoreau',
+  '"It\'s not what you look at that matters, it\'s what you see." — Henry David Thoreau',
+  '"The price of anything is the amount of life you exchange for it." — Henry David Thoreau',
+  '"Simplify, simplify." — Henry David Thoreau',
+
+  // Ralph Waldo Emerson
   '"What lies behind us and what lies before us are tiny matters compared to what lies within us." — Ralph Waldo Emerson',
-  '"Perfection is not attainable, but if we chase perfection we can catch excellence." — Vince Lombardi',
-  '"If you want to lift yourself up, lift up someone else." — Booker T. Washington',
-  '"Start where you are. Use what you have. Do what you can." — Arthur Ashe',
-  '"It is during our darkest moments that we must focus to see the light." — Aristotle',
+  '"To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment." — Ralph Waldo Emerson',
+
+  // Marcus Aurelius
+  '"You have power over your mind — not outside events. Realize this, and you will find strength." — Marcus Aurelius',
+  '"The happiness of your life depends upon the quality of your thoughts." — Marcus Aurelius',
+
+  // Rumi
+  '"Yesterday I was clever, so I wanted to change the world. Today I am wise, so I am changing myself." — Rumi',
+  '"What you seek is seeking you." — Rumi',
+
+  // Carl Jung
+  '"Who looks outside, dreams; who looks inside, awakes." — Carl Jung',
+  '"I am not what happened to me, I am what I choose to become." — Carl Jung',
+
+  // Seneca
+  '"We suffer more often in imagination than in reality." — Seneca',
+  '"It is not that we have a short time to live, but that we waste a lot of it." — Seneca',
+
+  // John Muir
+  '"The mountains are calling and I must go." — John Muir',
+  '"In every walk with nature one receives far more than he seeks." — John Muir',
+
+  // Thich Nhat Hanh
+  '"The present moment is filled with joy and happiness. If you are attentive, you will see it." — Thich Nhat Hanh',
 ];
 
 function getRandomQuote() {
