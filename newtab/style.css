@@ -78,7 +78,7 @@ body {
 
 .time {
   font-size: clamp(72px, 10vw, 140px);
-  font-weight: 300;
+  font-weight: 400;
   letter-spacing: -2px;
   line-height: 1;
   margin-bottom: 8px;
@@ -88,7 +88,7 @@ body {
 
 .greeting {
   font-size: clamp(20px, 2.8vw, 36px);
-  font-weight: 400;
+  font-weight: 700;
   margin-bottom: 40px;
   color: var(--text-secondary);
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
@@ -113,7 +113,7 @@ body {
   border-bottom: 2px solid var(--accent);
   color: var(--text-primary);
   font-size: 22px;
-  font-weight: 400;
+  font-weight: 700;
   text-align: center;
   padding: 8px 16px 12px;
   outline: none;
@@ -132,7 +132,7 @@ body {
 
 .focus-display {
   font-size: 26px;
-  font-weight: 400;
+  font-weight: 700;
   padding: 8px 16px 12px;
   cursor: pointer;
   transition: opacity var(--transition);
@@ -181,7 +181,7 @@ body {
   gap: 8px;
   color: var(--text-secondary);
   font-size: 15px;
-  font-weight: 400;
+  font-weight: 500;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 
@@ -190,7 +190,7 @@ body {
 }
 
 .weather-top #weather-temp {
-  font-weight: 500;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
@@ -199,7 +199,7 @@ body {
   text-transform: uppercase;
   font-size: 13px;
   letter-spacing: 1.5px;
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .settings-btn {
@@ -236,7 +236,7 @@ body {
   text-align: center;
   max-width: 500px;
   font-style: italic;
-  font-weight: 500;
+  font-weight: 700;
   font-size: 17px;
   line-height: 1.5;
   cursor: default;
@@ -348,7 +348,7 @@ body {
 .todo-header h2,
 .settings-header h2 {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
@@ -611,7 +611,7 @@ body {
 }
 
 .command-results .result-item .result-title {
-  font-weight: 500;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
