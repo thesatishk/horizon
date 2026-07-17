@@ -742,7 +742,7 @@ function showCommandBar() {
   // Dismiss dock if visible
   if (dom.dock && !dom.dock.classList.contains('hidden')) {
     dom.dock.classList.add('hidden');
-    dom.quoteText.style.display = ''; // restore quote
+    dom.quoteText.classList.remove('hidden');
   }
   dom.commandInput.classList.add('visible');
   dom.commandInput.focus();
@@ -886,25 +886,20 @@ function showBriefing(briefing) {
   if (dismissEl) dismissEl.onclick = () => {
     briefingDismissed = true;
     briefingEl.classList.add('hidden');
-    dom.quoteText.style.display = '';
+    dom.quoteText.classList.remove('hidden');
     updateDockVisibility();
   };
 
   // Hide quote while briefing is showing
-  dom.quoteText.style.display = 'none';
+  dom.quoteText.classList.add('hidden');
   briefingEl.classList.remove('hidden');
   updateDockVisibility();
 }
 
 function updateDockVisibility() {
-  const briefingEl = document.getElementById('briefing');
-  const plannerEl = document.getElementById('planner');
-  const anyVisible = ['briefing', 'planner'].some(
-    id => {
-      const el = document.getElementById(id);
-      return el && !el.classList.contains('hidden');
-    }
-  ) || dom.plannerWeek.children.length > 0;
+  const anyVisible = !dom.briefing?.classList.contains('hidden')
+    || !dom.planner?.classList.contains('hidden')
+    || dom.plannerWeek.children.length > 0;
   dom.dock.classList.toggle('hidden', !anyVisible);
 }
 
