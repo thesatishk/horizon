@@ -735,7 +735,10 @@ let commandDebounce;
 function showCommandBar() {
   // Dismiss briefing card if visible
   const briefing = document.getElementById('briefing');
-  if (briefing) briefing.classList.add('hidden');
+  if (briefing) {
+    briefing.classList.add('hidden');
+    dom.quoteText.style.display = ''; // restore quote
+  }
   dom.commandInput.classList.add('visible');
   dom.commandInput.focus();
 }
@@ -850,8 +853,11 @@ function renderCommandResults(results) {
 // Hermes Briefing
 // ============================================================
 
+let briefingDismissed = false;
+
 async function checkHermesBriefing() {
   if (!state.hermesEnabled || !window.HorizonHermes) return;
+  if (briefingDismissed) return;
 
   try {
     const briefing = await window.HorizonHermes.getBriefing();
@@ -872,6 +878,7 @@ function showBriefing(briefing) {
   document.getElementById('briefing-calendar').textContent = briefing.weather_note || '';
   document.getElementById('briefing-note').textContent = briefing.quick_note || '';
   document.getElementById('briefing-dismiss').onclick = () => {
+    briefingDismissed = true;
     widget.classList.add('hidden');
     dom.quoteText.style.display = '';
   };

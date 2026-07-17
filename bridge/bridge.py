@@ -98,6 +98,13 @@ def parse_hermes_json(text):
     return None
 
 
+class ReuseHTTPServer(HTTPServer):
+    """HTTPServer with SO_REUSEADDR set before bind."""
+    def server_bind(self):
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        super().server_bind()
+
+
 class BridgeHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass  # quiet
@@ -218,8 +225,7 @@ class BridgeHandler(BaseHTTPRequestHandler):
 
 def main():
     BRIDGE_DIR.mkdir(parents=True, exist_ok=True)
-    server = HTTPServer(("127.0.0.1", PORT), BridgeHandler)
-    server.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server = ReuseHTTPServer(("127.0.0.1", PORT), BridgeHandler)
     print(f"🌅 Horizon Bridge running on http://localhost:{PORT}")
     print(f"   Briefing: http://localhost:{PORT}/api/briefing")
     print(f"   Query:    POST http://localhost:{PORT}/api/query")

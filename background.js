@@ -61,7 +61,16 @@ chrome.runtime.onInstalled.addListener((details) => {
 chrome.alarms.create('poll-notifications', { periodInMinutes: 2 });
 chrome.alarms.create('refresh-briefing', { periodInMinutes: 5 });
 
-const shownNotifications = new Set();
+async function getShownIds() {
+  const data = await chrome.storage.local.get('horizon:shown-notifications');
+  return new Set(data['horizon:shown-notifications'] || []);
+}
+
+async function addShownId(id) {
+  const shown = await getShownIds();
+  shown.add(id);
+  await chrome.storage.local.set({ 'horizon:shown-notifications': [...shown] });
+}
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'poll-notifications') {
@@ -81,11 +90,18 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         return;
       }
 
-      // Show new notifications
-      for (const n of notifications) {
-        if (shownNotifications.has(n.id)) continue;
-        shownNotifications.add(n.id);
+      const shownIds = await getShownIds();
+      
+      // Compute new count BEFORE adding to shown set
+      const newNotifications = notifications.filter(n => !shownIds.has(n.id));
+      if (newNotifications.length > 0) {
+        chrome.action?.setBadgeText?.({ text: String(newNotifications.length) });
+        chrome.action?.setBadgeBackgroundColor?.({ color: '#f59e0b' });
+      }
 
+      // Show new notifications
+      for (const n of newNotifications) {
+        await addShownId(n.id);
         chrome.notifications?.create?.(n.id, {
           type: 'basic',
           iconUrl: 'icons/icon-128.png',
@@ -93,13 +109,6 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
           message: n.body,
           priority: n.urgency === 'now' ? 2 : 0,
         });
-      }
-
-      // Badge count
-      const unshown = notifications.filter(n => !shownNotifications.has(n.id)).length;
-      if (unshown > 0) {
-        chrome.action?.setBadgeText?.({ text: String(unshown) });
-        chrome.action?.setBadgeBackgroundColor?.({ color: '#f59e0b' });
       }
     } catch {
       // Bridge not available
