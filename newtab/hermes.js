@@ -120,6 +120,61 @@ window.HorizonHermes = (function () {
     }
   }
 
+  /**
+   * Get the planner data (spine + week strip). Fast, deterministic.
+   */
+  async function getPlan() {
+    const base = await getBaseUrl();
+    try {
+      const response = await fetch(`${base}/api/plan`, {
+        signal: AbortSignal.timeout(3000),
+      });
+      if (!response.ok) return null;
+      return await response.json();
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Trigger a background refresh of calendar events + Hermes suggestions.
+   * Fire-and-forget — callers should not await for rendering.
+   */
+  async function refreshPlan(todos) {
+    const base = await getBaseUrl();
+    try {
+      const response = await fetch(`${base}/api/plan/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ todos }),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!response.ok) return null;
+      return await response.json();
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Accept a planner suggestion — removes it from cache, logs to Hermes memory.
+   */
+  async function acceptSuggestion(task, slot) {
+    const base = await getBaseUrl();
+    try {
+      const response = await fetch(`${base}/api/plan/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task, slot }),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!response.ok) return null;
+      return await response.json();
+    } catch {
+      return null;
+    }
+  }
+
   // Public API
   return {
     query,
@@ -127,5 +182,8 @@ window.HorizonHermes = (function () {
     isAvailable,
     setFocus,
     getCalendar,
+    getPlan,
+    refreshPlan,
+    acceptSuggestion,
   };
 })();

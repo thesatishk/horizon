@@ -24,6 +24,7 @@ let state = {
   focusDone: false,
   todos: [],
   links: [],
+  acceptedSuggestions: [],
 };
 
 // ============================================================
@@ -83,6 +84,10 @@ const dom = {
   settingsToggle: $('#settings-toggle'),
   commandInput: $('#command-input'),
   commandResults: $('#command-results'),
+  planner: $('#planner'),
+  plannerSpine: $('#planner-spine'),
+  plannerOverflow: $('#planner-overflow'),
+  plannerWeek: $('#planner-week'),
 };
 
 // ============================================================
@@ -889,6 +894,194 @@ function showBriefing(briefing) {
 }
 
 // ============================================================
+// Planner
+// ============================================================
+
+const dismissedSuggestions = new Set();
+
+async function loadPlanner() {
+  if (!state.hermesEnabled || !window.HorizonHermes) return;
+
+  // Prune accepted suggestions from past days
+  const todayISO = new Date().toISOString().slice(0, 10);
+  state.acceptedSuggestions = (state.acceptedSuggestions || []).filter(s => s.date === todayISO);
+
+  const plan = await window.HorizonHermes.getPlan();
+  if (!plan) return;
+
+  renderPlanner(plan);
+
+  // Fire background refresh if suggestions are stale
+  if (plan.suggestions_fresh === false) {
+    const todos = state.todos.filter(t => !t.done).map(t => t.text);
+    window.HorizonHermes.refreshPlan(todos).then(r => {
+      if (r && r.refreshed) {
+        window.HorizonHermes.getPlan().then(p => { if (p) renderPlanner(p); });
+      }
+    });
+  }
+}
+
+function renderPlanner(plan) {
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const acceptedSet = new Set((state.acceptedSuggestions || []).map(s => s.task));
+
+  // Clear containers
+  dom.plannerSpine.replaceChildren();
+  dom.plannerWeek.replaceChildren();
+
+  // Build spine rows
+  const now = new Date();
+  let rowCount = 0;
+
+  for (const item of (plan.spine || [])) {
+    // Filter: drop suggestions whose task isn't an open todo
+    if (item.type === 'suggestion') {
+      const matchesTodo = state.todos.some(t => !t.done && t.text === item.task);
+      if (!matchesTodo) continue;
+      if (dismissedSuggestions.has(item.task)) continue;
+      if (acceptedSet.has(item.task)) continue;
+    }
+
+    // Filter: accepted suggestions render as committed rows
+    if (item.type === 'event' && acceptedSet.has(item.title || '')) continue;
+
+    renderPlannerRow(item, now, todayISO, acceptedSet);
+    rowCount++;
+  }
+
+  // Render accepted suggestions as committed rows
+  for (const acc of (state.acceptedSuggestions || [])) {
+    if (acc.date !== todayISO) continue;
+    // Only render if not already in the spine
+    const alreadyInSpine = (plan.spine || []).some(
+      s => (s.task || s.title || '') === acc.task
+    );
+    if (alreadyInSpine) continue;
+    renderPlannerRow({
+      type: 'event',
+      title: acc.task,
+      time: acc.slot,
+      accepted: true,
+    }, now, todayISO, acceptedSet);
+  }
+
+  // Overflow
+  const shownEvents = (plan.spine || []).filter(i => i.type === 'event').length;
+  const shownAccepted = (state.acceptedSuggestions || []).filter(a => a.date === todayISO).length;
+  const totalShown = rowCount;
+  const overflow = Math.max(0, ((plan.spine || []).length + shownAccepted) - totalShown);
+  if (overflow > 0 || plan.overflow > 0) {
+    dom.plannerOverflow.textContent = `and ${Math.max(overflow, plan.overflow || 0)} more`;
+    dom.plannerOverflow.classList.remove('hidden');
+  } else {
+    dom.plannerOverflow.classList.add('hidden');
+  }
+
+  // Week strip
+  const today = todayISO;
+  for (const day of (plan.week || [])) {
+    const col = document.createElement('div');
+    col.className = 'week-day';
+    if (day.date === today) col.classList.add('today');
+
+    const bar = document.createElement('div');
+    bar.className = `week-bar load-${day.load}`;
+    bar.title = `${day.day} · ${day.hours}h scheduled`;
+    bar.setAttribute('aria-label', bar.title);
+
+    const label = document.createElement('span');
+    label.className = 'week-label';
+    label.textContent = day.day;
+
+    col.appendChild(bar);
+    col.appendChild(label);
+    dom.plannerWeek.appendChild(col);
+  }
+
+  // Show the planner
+  if (rowCount > 0 || (plan.week || []).length > 0) {
+    dom.planner.classList.remove('hidden');
+  }
+}
+
+function renderPlannerRow(item, now, todayISO, acceptedSet) {
+  const li = document.createElement('li');
+  li.className = 'spine-row';
+
+  const timeStr = item.time || item.slot || '';
+  const isPast = timeStr && timeStr < `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  if (isPast && item.type === 'event') {
+    li.classList.add('past');
+  }
+
+  // Time
+  const timeEl = document.createElement('span');
+  timeEl.className = 'spine-time';
+  timeEl.textContent = timeStr || '—';
+  li.appendChild(timeEl);
+
+  // Marker
+  const marker = document.createElement('span');
+  marker.className = 'spine-marker';
+  marker.textContent = item.type === 'suggestion' ? '✦' : '·';
+  li.appendChild(marker);
+
+  // Title + reason wrapper
+  const body = document.createElement('div');
+  body.style.flex = '1';
+
+  const titleEl = document.createElement('div');
+  titleEl.className = 'spine-title';
+  titleEl.textContent = item.title || item.task || '';
+  body.appendChild(titleEl);
+
+  if (item.reason) {
+    const reason = document.createElement('div');
+    reason.className = 'spine-reason';
+    reason.textContent = item.reason;
+    body.appendChild(reason);
+  }
+
+  li.appendChild(body);
+
+  // Actions for suggestions
+  if (item.type === 'suggestion' && !acceptedSet.has(item.task)) {
+    li.classList.add('suggestion');
+
+    const actions = document.createElement('div');
+    actions.className = 'spine-actions';
+
+    const acceptBtn = document.createElement('button');
+    acceptBtn.className = 'spine-accept';
+    acceptBtn.textContent = 'Accept';
+    acceptBtn.onclick = () => {
+      // Optimistic: convert to committed row
+      li.classList.remove('suggestion');
+      actions.remove();
+      marker.textContent = '·';
+      state.acceptedSuggestions.push({ task: item.task, slot: item.slot, date: todayISO });
+      saveState();
+      window.HorizonHermes.acceptSuggestion(item.task, item.slot);
+    };
+
+    const dismissBtn = document.createElement('button');
+    dismissBtn.className = 'spine-dismiss';
+    dismissBtn.textContent = '×';
+    dismissBtn.onclick = () => {
+      dismissedSuggestions.add(item.task);
+      li.remove();
+    };
+
+    actions.appendChild(acceptBtn);
+    actions.appendChild(dismissBtn);
+    li.appendChild(actions);
+  }
+
+  dom.plannerSpine.appendChild(li);
+}
+
+// ============================================================
 // Utils
 // ============================================================
 
@@ -1017,6 +1210,8 @@ async function init() {
   if (state.hermesEnabled) {
     setTimeout(checkHermesBriefing, 2000);
     setInterval(checkHermesBriefing, 300000); // every 5 min
+    setTimeout(loadPlanner, 2500);
+    setInterval(loadPlanner, 300000); // every 5 min
   }
 }
 
