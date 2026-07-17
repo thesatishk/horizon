@@ -1,23 +1,82 @@
-
 /* ============================================
-   Planner
+   Dock — unified bottom surface
+   Contains briefing, today spine, week strip
    ============================================ */
 
-.planner {
+.dock {
   position: fixed;
-  bottom: 90px;
+  bottom: 48px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
   width: 90vw;
-  max-width: 520px;
+  max-width: 560px;
   background: var(--panel-bg);
   backdrop-filter: blur(20px);
   border: 1px solid var(--panel-border);
-  border-radius: var(--radius);
-  padding: 18px 22px 14px;
+  border-radius: 16px;
+  padding: 16px 20px 14px;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 45vh;
+  overflow-y: auto;
   animation: slideUp 0.4s ease-out;
+}
+
+.dock > * + * {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 14px;
+}
+
+/* ============================================
+   Briefing section
+   ============================================ */
+
+.dock-briefing {
+  position: relative;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--text-primary);
+  padding-right: 28px;
+  overflow-wrap: break-word;
+}
+
+.dock-briefing-note {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  font-style: italic;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+#briefing-dismiss {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all var(--transition);
+}
+
+#briefing-dismiss:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================
+   Planner section (today spine)
+   ============================================ */
+
+.dock-planner {
+  flex-shrink: 0;
 }
 
 .planner-header {
@@ -38,19 +97,20 @@
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 1px;
+  cursor: default;
 }
 
 .planner-spine {
   list-style: none;
   padding: 0;
-  margin: 0 0 12px;
+  margin: 0;
 }
 
 .spine-row {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  padding: 6px 0;
+  padding: 5px 0;
   font-size: 14px;
   color: var(--text-primary);
 }
@@ -58,8 +118,8 @@
 .spine-row.suggestion {
   background: rgba(255, 255, 255, 0.04);
   border-radius: 6px;
-  padding: 8px 10px;
-  margin: 2px -10px;
+  padding: 7px 10px;
+  margin: 2px -10px 2px -10px;
 }
 
 .spine-time {
@@ -101,6 +161,12 @@
   font-style: italic;
 }
 
+.spine-empty {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  padding: 4px 0;
+}
+
 .spine-actions {
   display: flex;
   gap: 4px;
@@ -135,47 +201,74 @@
   text-align: center;
   font-size: 12px;
   color: var(--text-tertiary);
-  padding: 2px 0 8px;
+  padding: 4px 0 0;
 }
+
+/* ============================================
+   Week strip
+   ============================================ */
 
 .planner-week {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 6px;
   align-items: end;
-  padding-top: 4px;
+  height: 40px;
 }
 
 .week-day {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 3px;
 }
 
 .week-bar {
   width: 100%;
-  border-radius: 5px;
+  border-radius: 2px;
   transition: height 0.3s ease;
 }
 
-.week-bar.load-none     { background: rgba(255,255,255,0.12); height: 8px; }
-.week-bar.load-light    { background: #97C459; height: 14px; }
-.week-bar.load-moderate { background: #FAC775; height: 24px; }
-.week-bar.load-heavy    { background: #EF9F27; height: 36px; }
-
-.week-day.today .week-bar {
-  outline: 2px solid rgba(255,255,255,0.6);
-  outline-offset: 2px;
-}
-
+/* Single-letter labels */
 .week-label {
-  font-size: 11px;
-  color: var(--text-tertiary);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.55);
   text-transform: uppercase;
 }
 
 .week-day.today .week-label {
   color: var(--text-primary);
   font-weight: 700;
+}
+
+/* Today dot marker */
+.week-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  flex-shrink: 0;
+  order: -1;
+}
+
+/* Load bar colors + heights */
+.week-bar.load-none {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.week-bar.load-light {
+  height: 14px;
+  background: #97C459;
+}
+
+.week-bar.load-moderate {
+  height: 24px;
+  background: #FAC775;
+}
+
+.week-bar.load-heavy {
+  height: 36px;
+  background: #EF9F27;
 }

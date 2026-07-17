@@ -248,7 +248,12 @@ class BridgeHandler(BaseHTTPRequestHandler):
         elif path == "/api/briefing":
             briefing = load_briefing()
             if briefing:
-                self._send_json(briefing)
+                # Reject stale briefings from a different day
+                briefing_date = briefing.get("date", "")
+                if briefing_date and briefing_date != time.strftime("%Y-%m-%d"):
+                    self._send_json({"stale": True})
+                else:
+                    self._send_json(briefing)
             else:
                 self._send_json({"available": False}, status=404)
 
@@ -274,6 +279,12 @@ class BridgeHandler(BaseHTTPRequestHandler):
             today_str = date.today().isoformat()
             plan_events = load_plan_events()
 
+            # Track whether events data is fresh for today
+            events_fresh = (
+                PLAN_EVENTS_FILE.exists()
+                and plan_events.get("date") == today_str
+            )
+
             # Use cached events only if date matches today
             if plan_events.get("date") != today_str:
                 plan_events = {"date": "", "events": [], "week": {}}
@@ -294,6 +305,7 @@ class BridgeHandler(BaseHTTPRequestHandler):
                 "spine": spine,
                 "overflow": overflow,
                 "week": week,
+                "events_fresh": events_fresh,
                 "suggestions_fresh": suggestions_fresh,
             })
 

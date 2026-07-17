@@ -40,23 +40,26 @@
     <span id="quote-text"></span>
   </div>
 
-  <!-- Hermes briefing overlay -->
-  <div id="briefing" class="briefing-widget hidden">
-    <div id="briefing-greeting"></div>
-    <div id="briefing-focus"></div>
-    <div id="briefing-calendar"></div>
-    <div id="briefing-note"></div>
-    <button id="briefing-dismiss" class="icon-btn" title="Dismiss">×</button>
-  </div>
-
-  <!-- Weekly Planner -->
-  <div id="planner" class="planner hidden">
-    <div class="planner-header">
-      <span class="planner-title">Today</span>
-      <span class="planner-week-hint">this week</span>
+  <!-- Unified bottom dock (briefing + today spine + week strip) -->
+  <div id="dock" class="dock hidden">
+    <!-- Briefing section -->
+    <div id="briefing" class="dock-briefing hidden">
+      <p id="briefing-focus"></p>
+      <p id="briefing-note" class="dock-briefing-note"></p>
+      <button id="briefing-dismiss" aria-label="Dismiss briefing">×</button>
     </div>
-    <ul id="planner-spine" class="planner-spine"></ul>
-    <div id="planner-overflow" class="planner-overflow hidden"></div>
+
+    <!-- Today spine section -->
+    <div id="planner" class="dock-planner hidden">
+      <div class="planner-header">
+        <span class="planner-title">Today</span>
+        <span class="planner-week-hint">this week</span>
+      </div>
+      <ul id="planner-spine" class="planner-spine"></ul>
+      <div id="planner-overflow" class="planner-overflow hidden"></div>
+    </div>
+
+    <!-- Week strip (always visible when dock is) -->
     <div id="planner-week" class="planner-week"></div>
   </div>
 

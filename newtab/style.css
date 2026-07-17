@@ -245,67 +245,6 @@ body {
 }
 
 /* ============================================
-   Hermes Briefing
-   ============================================ */
-
-.briefing-widget {
-  position: fixed;
-  bottom: 90px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
-  background: var(--panel-bg);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius);
-  padding: 20px 24px;
-  max-width: 440px;
-  width: 90vw;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
-  animation: slideUp 0.4s ease-out;
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-
-#briefing-greeting {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: 10px;
-}
-
-#briefing-focus {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-  line-height: 1.4;
-}
-
-#briefing-calendar {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
-  line-height: 1.5;
-}
-
-#briefing-note {
-  font-size: 13px;
-  color: var(--text-tertiary);
-  font-style: italic;
-  line-height: 1.5;
-}
-
-#briefing-dismiss {
-  position: absolute;
-  top: 8px;
-  right: 12px;
-}
-
-/* ============================================
    Links Bar
    ============================================ */
 

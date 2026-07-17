@@ -84,6 +84,7 @@ const dom = {
   settingsToggle: $('#settings-toggle'),
   commandInput: $('#command-input'),
   commandResults: $('#command-results'),
+  dock: $('#dock'),
   planner: $('#planner'),
   plannerSpine: $('#planner-spine'),
   plannerOverflow: $('#planner-overflow'),
@@ -738,10 +739,9 @@ function bindSettings() {
 let commandDebounce;
 
 function showCommandBar() {
-  // Dismiss briefing card if visible
-  const briefing = document.getElementById('briefing');
-  if (briefing) {
-    briefing.classList.add('hidden');
+  // Dismiss dock if visible
+  if (dom.dock && !dom.dock.classList.contains('hidden')) {
+    dom.dock.classList.add('hidden');
     dom.quoteText.style.display = ''; // restore quote
   }
   dom.commandInput.classList.add('visible');
@@ -875,22 +875,37 @@ async function checkHermesBriefing() {
 }
 
 function showBriefing(briefing) {
-  const widget = document.getElementById('briefing');
-  if (!widget) return;
+  const briefingEl = document.getElementById('briefing');
+  const focusEl = document.getElementById('briefing-focus');
+  const noteEl = document.getElementById('briefing-note');
+  const dismissEl = document.getElementById('briefing-dismiss');
+  if (!briefingEl) return;
 
-  document.getElementById('briefing-greeting').textContent = briefing.calendar_summary || '';
-  document.getElementById('briefing-focus').textContent = briefing.focus_suggestion || '';
-  document.getElementById('briefing-calendar').textContent = briefing.weather_note || '';
-  document.getElementById('briefing-note').textContent = briefing.quick_note || '';
-  document.getElementById('briefing-dismiss').onclick = () => {
+  if (focusEl) focusEl.textContent = briefing.focus_suggestion || '';
+  if (noteEl) noteEl.textContent = briefing.quick_note || '';
+  if (dismissEl) dismissEl.onclick = () => {
     briefingDismissed = true;
-    widget.classList.add('hidden');
+    briefingEl.classList.add('hidden');
     dom.quoteText.style.display = '';
+    updateDockVisibility();
   };
-  
+
   // Hide quote while briefing is showing
   dom.quoteText.style.display = 'none';
-  widget.classList.remove('hidden');
+  briefingEl.classList.remove('hidden');
+  updateDockVisibility();
+}
+
+function updateDockVisibility() {
+  const briefingEl = document.getElementById('briefing');
+  const plannerEl = document.getElementById('planner');
+  const anyVisible = ['briefing', 'planner'].some(
+    id => {
+      const el = document.getElementById(id);
+      return el && !el.classList.contains('hidden');
+    }
+  ) || dom.plannerWeek.children.length > 0;
+  dom.dock.classList.toggle('hidden', !anyVisible);
 }
 
 // ============================================================
@@ -898,6 +913,7 @@ function showBriefing(briefing) {
 // ============================================================
 
 const dismissedSuggestions = new Set();
+let lastPlanRefreshAt = 0;
 
 async function loadPlanner() {
   if (!state.hermesEnabled || !window.HorizonHermes) return;
@@ -911,8 +927,10 @@ async function loadPlanner() {
 
   renderPlanner(plan);
 
-  // Fire background refresh if suggestions are stale
-  if (plan.suggestions_fresh === false) {
+  // Fire background refresh if events or suggestions are stale, with retry guard
+  if ((plan.events_fresh === false || plan.suggestions_fresh === false)
+      && (Date.now() - lastPlanRefreshAt) > 10 * 60 * 1000) {
+    lastPlanRefreshAt = Date.now();
     const todos = state.todos.filter(t => !t.done).map(t => t.text);
     window.HorizonHermes.refreshPlan(todos).then(r => {
       if (r && r.refreshed) {
@@ -943,7 +961,6 @@ function renderPlanner(plan) {
       if (acceptedSet.has(item.task)) continue;
     }
 
-    // Filter: accepted suggestions render as committed rows
     if (item.type === 'event' && acceptedSet.has(item.title || '')) continue;
 
     renderPlannerRow(item, now, todayISO, acceptedSet);
@@ -953,7 +970,6 @@ function renderPlanner(plan) {
   // Render accepted suggestions as committed rows
   for (const acc of (state.acceptedSuggestions || [])) {
     if (acc.date !== todayISO) continue;
-    // Only render if not already in the spine
     const alreadyInSpine = (plan.spine || []).some(
       s => (s.task || s.title || '') === acc.task
     );
@@ -964,13 +980,20 @@ function renderPlanner(plan) {
       time: acc.slot,
       accepted: true,
     }, now, todayISO, acceptedSet);
+    rowCount++;
+  }
+
+  // Empty state: show "Nothing scheduled today" if week has data but spine empty
+  const weekHasData = (plan.week || []).some(d => d.load !== 'none');
+  if (rowCount === 0 && weekHasData) {
+    const emptyLi = document.createElement('li');
+    emptyLi.className = 'spine-empty';
+    emptyLi.textContent = 'Nothing scheduled today';
+    dom.plannerSpine.appendChild(emptyLi);
   }
 
   // Overflow
-  const shownEvents = (plan.spine || []).filter(i => i.type === 'event').length;
-  const shownAccepted = (state.acceptedSuggestions || []).filter(a => a.date === todayISO).length;
-  const totalShown = rowCount;
-  const overflow = Math.max(0, ((plan.spine || []).length + shownAccepted) - totalShown);
+  const overflow = Math.max(0, ((plan.spine || []).length + (state.acceptedSuggestions || []).filter(a => a.date === todayISO).length) - rowCount);
   if (overflow > 0 || plan.overflow > 0) {
     dom.plannerOverflow.textContent = `and ${Math.max(overflow, plan.overflow || 0)} more`;
     dom.plannerOverflow.classList.remove('hidden');
@@ -978,31 +1001,50 @@ function renderPlanner(plan) {
     dom.plannerOverflow.classList.add('hidden');
   }
 
-  // Week strip
-  const today = todayISO;
-  for (const day of (plan.week || [])) {
-    const col = document.createElement('div');
-    col.className = 'week-day';
-    if (day.date === today) col.classList.add('today');
+  // Week strip — all-none check for dock visibility
+  const allNone = (plan.week || []).every(d => d.load === 'none');
 
-    const bar = document.createElement('div');
-    bar.className = `week-bar load-${day.load}`;
-    bar.title = `${day.day} · ${day.hours}h scheduled`;
-    bar.setAttribute('aria-label', bar.title);
+  // Only show week strip if there's data
+  if (!allNone || rowCount > 0) {
+    const today = todayISO;
+    const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    for (let i = 0; i < (plan.week || []).length; i++) {
+      const day = plan.week[i];
+      const col = document.createElement('div');
+      col.className = 'week-day';
+      if (day.date === today) col.classList.add('today');
 
-    const label = document.createElement('span');
-    label.className = 'week-label';
-    label.textContent = day.day;
+      const bar = document.createElement('div');
+      bar.className = `week-bar load-${day.load}`;
+      const fullDay = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][i];
+      bar.title = `${fullDay} · ${day.hours}h scheduled`;
+      bar.setAttribute('aria-label', bar.title);
 
-    col.appendChild(bar);
-    col.appendChild(label);
-    dom.plannerWeek.appendChild(col);
+      // Today dot marker
+      if (day.date === today) {
+        const dot = document.createElement('div');
+        dot.className = 'week-dot';
+        col.appendChild(dot);
+      }
+
+      const label = document.createElement('span');
+      label.className = 'week-label';
+      label.textContent = dayLabels[i] || day.day;
+
+      col.appendChild(bar);
+      col.appendChild(label);
+      dom.plannerWeek.appendChild(col);
+    }
   }
 
-  // Show the planner
-  if (rowCount > 0 || (plan.week || []).length > 0) {
+  // Show/hide planner section
+  if (rowCount > 0 || weekHasData) {
     dom.planner.classList.remove('hidden');
+  } else {
+    dom.planner.classList.add('hidden');
   }
+
+  updateDockVisibility();
 }
 
 function renderPlannerRow(item, now, todayISO, acceptedSet) {
